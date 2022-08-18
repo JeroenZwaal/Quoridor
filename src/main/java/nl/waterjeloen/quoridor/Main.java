@@ -84,6 +84,11 @@ public class Main {
                 gui.getPanel().clearHighlights();
                 gui.getPanel().highlightCenter(row, column);
                 fields.clear();
+
+                gui.getPanel().highlightHorizontalWall(row, column + 1);
+                gui.getPanel().highlightHorizontalWall(row , column);
+                gui.getPanel().highlightVerticalWall(row + 1 , column);
+                gui.getPanel().highlightVerticalWall(row, column);
             }
 
             @Override
@@ -92,6 +97,11 @@ public class Main {
                 gui.getPanel().clearHighlights();
                 gui.getPanel().highlightHorizontalWall(row, column);
                 fields.clear();
+
+                gui.getPanel().highlightHorizontalWall(row, column - 1);
+                gui.getPanel().highlightHorizontalWall(row, column + 1);
+                gui.getPanel().highlightCenter(row, column - 1);
+                gui.getPanel().highlightCenter(row, column);
             }
 
             @Override
@@ -100,6 +110,11 @@ public class Main {
                 gui.getPanel().clearHighlights();
                 gui.getPanel().highlightVerticalWall(row, column);
                 fields.clear();
+
+                gui.getPanel().highlightVerticalWall(row - 1, column);
+                gui.getPanel().highlightVerticalWall(row + 1, column);
+                gui.getPanel().highlightCenter(row - 1, column);
+                gui.getPanel().highlightCenter(row, column);
             }
         });
 
