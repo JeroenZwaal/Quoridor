@@ -4,6 +4,7 @@ public class Board {
     private final int size;
     private final Player player1;
     private final Player player2;
+    private Player currentPlayer;
     private final boolean[][] horizontalWalls;
     private final boolean[][] verticalWalls;
 
@@ -11,6 +12,7 @@ public class Board {
         this.size = size;
         this.player1 = player1;
         this.player2 = player2;
+        this.currentPlayer = player1;
         this.horizontalWalls = new boolean[size - 1][size - 1];
         this.verticalWalls = new boolean[size - 1][size - 1];
     }
@@ -27,19 +29,36 @@ public class Board {
         return player2;
     }
 
+    public Player getCurrentPlayer() {
+        return currentPlayer;
+    }
+
+    public void movePlayer(int row, int column) {
+        currentPlayer.changePosition(row, column);
+        currentPlayer = (currentPlayer == player1) ? player2 : player1;
+    }
+
     public boolean hasHorizontalWall(int row, int column) {
-        return horizontalWalls[row][column];
+        return isValidWall(row, column) && horizontalWalls[row][column];
     }
 
     public void addHorizontalWall(int row, int column) {
-        horizontalWalls[row][column] = true;
+        if (isValidWall(row, column)) {
+            horizontalWalls[row][column] = true;
+        }
     }
 
     public boolean hasVerticalWall(int row, int column) {
-        return verticalWalls[row][column];
+        return isValidWall(row, column) && verticalWalls[row][column];
     }
 
     public void addVerticalWall(int row, int column) {
-        verticalWalls[row][column] = true;
+        if (isValidWall(row, column)) {
+            verticalWalls[row][column] = true;
+        }
+    }
+
+    private boolean isValidWall(int row, int column) {
+        return (row >= 0 && row < size - 1 && column >= 0 && column < size - 1);
     }
 }

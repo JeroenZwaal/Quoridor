@@ -6,3 +6,4 @@ public interface BoardListener {
     void horizontalWallClicked(int row, int column);
     void verticalWallClicked(int row, int column);
 }
+
