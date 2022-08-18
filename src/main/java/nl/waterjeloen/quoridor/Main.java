@@ -16,19 +16,51 @@ public class Main {
                 final Player player = board.getCurrentPlayer();
                 if (!moving && row == player.getRow() && column == player.getColumn()) {
                     gui.getPanel().clearHighlights();
-                    if (!board.hasHorizontalWall(row, column) && !board.hasHorizontalWall(row, column - 1)) {
-                        gui.getPanel().highlightField(row + 1, column);
-                    }
-                    if (!board.hasHorizontalWall(row - 1, column) && !board.hasHorizontalWall(row - 1, column - 1)) {
-                        gui.getPanel().highlightField(row - 1, column);
-                    }
-                    if (!board.hasVerticalWall(row, column ) && !board.hasVerticalWall(row - 1, column)) {
-                        gui.getPanel().highlightField(row, column + 1);
-                    }
-                    if (!board.hasVerticalWall(row, column -1 ) && !board.hasVerticalWall(row - 1, column - 1)) {
-                        gui.getPanel().highlightField(row, column - 1);
-                    }
                     moving = true;
+
+                    // move down?
+                    if (!board.hasHorizontalWall(row, column) && !board.hasHorizontalWall(row, column - 1)) {
+                        if (board.hasPlayer(row + 1, column)) {
+                            if (!board.hasHorizontalWall(row + 1, column) && !board.hasHorizontalWall(row + 1, column - 1)) {
+                                gui.getPanel().highlightField(row + 2, column);
+                            }
+                        } else {
+                            gui.getPanel().highlightField(row + 1, column);
+                        }
+                    }
+
+                    // move up?
+                    if (!board.hasHorizontalWall(row - 1, column) && !board.hasHorizontalWall(row - 1, column - 1)) {
+                        if (board.hasPlayer(row - 1, column)) {
+                            if (!board.hasHorizontalWall(row - 2, column) && !board.hasHorizontalWall(row - 2, column - 1)) {
+                                gui.getPanel().highlightField(row - 2, column);
+                            }
+                        } else {
+                            gui.getPanel().highlightField(row - 1, column);
+                        }
+                    }
+
+                    // move right?
+                    if (!board.hasVerticalWall(row, column ) && !board.hasVerticalWall(row - 1, column)) {
+                        if (board.hasPlayer(row , column + 1)) {
+                            if (!board.hasVerticalWall(row, column + 1 ) && !board.hasVerticalWall(row - 1, column + 1)) {
+                                gui.getPanel().highlightField(row , column + 2);
+                            }
+                        } else {
+                            gui.getPanel().highlightField(row , column + 1);
+                        }
+                    }
+
+                    // move left?
+                    if (!board.hasVerticalWall(row, column -1 ) && !board.hasVerticalWall(row - 1, column - 1)) {
+                        if (board.hasPlayer(row, column - 1)){
+                            if (!board.hasVerticalWall(row, column - 2) && !board.hasVerticalWall(row - 1, column - 2)) {
+                                gui.getPanel().highlightField(row, column - 2);
+                            }
+                        } else {
+                            gui.getPanel().highlightField(row, column - 1);
+                        }
+                    }
                 } else if (moving) {
                     if ((Math.abs(row - player.getRow()) == 1 && column == player.getColumn())
                         || (Math.abs(column - player.getColumn()) == 1 && row == player.getRow())) {

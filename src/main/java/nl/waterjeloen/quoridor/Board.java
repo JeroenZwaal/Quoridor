@@ -61,4 +61,9 @@ public class Board {
     private boolean isValidWall(int row, int column) {
         return (row >= 0 && row < size - 1 && column >= 0 && column < size - 1);
     }
+
+    public boolean hasPlayer(int row, int column) {
+        return (player1.getRow() == row && player1.getColumn() == column)
+            || (player2.getRow() == row && player2.getColumn() == column);
+    }
 }
