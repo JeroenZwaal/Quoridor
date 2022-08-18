@@ -1,5 +1,9 @@
 package nl.waterjeloen.quoridor;
 
+import java.awt.Point;
+import java.util.ArrayList;
+import java.util.List;
+
 public class Main {
     public static void main(String[] args) {
         final Player me = new Player("me", 0, 4);
@@ -8,24 +12,23 @@ public class Main {
         final GUI gui = new GUI(board);
         gui.setVisible(true);
         gui.getPanel().addListener(new BoardListener() {
-            private boolean moving = false;
+            private final List<Point> fields = new ArrayList<>();
 
             @Override
             public void fieldClicked(int row, int column) {
-                System.out.println("Field clicked: " + row + ", " + column);
                 final Player player = board.getCurrentPlayer();
-                if (!moving && row == player.getRow() && column == player.getColumn()) {
+
+                if (fields.isEmpty() && row == player.getRow() && column == player.getColumn()) {
                     gui.getPanel().clearHighlights();
-                    moving = true;
 
                     // move down?
                     if (!board.hasHorizontalWall(row, column) && !board.hasHorizontalWall(row, column - 1)) {
                         if (board.hasPlayer(row + 1, column)) {
                             if (!board.hasHorizontalWall(row + 1, column) && !board.hasHorizontalWall(row + 1, column - 1)) {
-                                gui.getPanel().highlightField(row + 2, column);
+                                fields.add(new Point(column, row + 2));
                             }
                         } else {
-                            gui.getPanel().highlightField(row + 1, column);
+                            fields.add(new Point(column, row + 1));
                         }
                     }
 
@@ -33,10 +36,10 @@ public class Main {
                     if (!board.hasHorizontalWall(row - 1, column) && !board.hasHorizontalWall(row - 1, column - 1)) {
                         if (board.hasPlayer(row - 1, column)) {
                             if (!board.hasHorizontalWall(row - 2, column) && !board.hasHorizontalWall(row - 2, column - 1)) {
-                                gui.getPanel().highlightField(row - 2, column);
+                                fields.add(new Point(column, row - 2));
                             }
                         } else {
-                            gui.getPanel().highlightField(row - 1, column);
+                            fields.add(new Point(column, row - 1));
                         }
                     }
 
@@ -44,10 +47,10 @@ public class Main {
                     if (!board.hasVerticalWall(row, column ) && !board.hasVerticalWall(row - 1, column)) {
                         if (board.hasPlayer(row , column + 1)) {
                             if (!board.hasVerticalWall(row, column + 1 ) && !board.hasVerticalWall(row - 1, column + 1)) {
-                                gui.getPanel().highlightField(row , column + 2);
+                                fields.add(new Point(column + 2, row));
                             }
                         } else {
-                            gui.getPanel().highlightField(row , column + 1);
+                            fields.add(new Point(column + 1, row));
                         }
                     }
 
@@ -55,18 +58,21 @@ public class Main {
                     if (!board.hasVerticalWall(row, column -1 ) && !board.hasVerticalWall(row - 1, column - 1)) {
                         if (board.hasPlayer(row, column - 1)){
                             if (!board.hasVerticalWall(row, column - 2) && !board.hasVerticalWall(row - 1, column - 2)) {
-                                gui.getPanel().highlightField(row, column - 2);
+                                fields.add(new Point(column - 2, row));
                             }
                         } else {
-                            gui.getPanel().highlightField(row, column - 1);
+                            fields.add(new Point(column - 1, row));
                         }
                     }
-                } else if (moving) {
-                    if ((Math.abs(row - player.getRow()) == 1 && column == player.getColumn())
-                        || (Math.abs(column - player.getColumn()) == 1 && row == player.getRow())) {
+
+                    for (Point f : fields) {
+                        gui.getPanel().highlightField(f.y, f.x);
+                    }
+                } else if (!fields.isEmpty()) {
+                    if (fields.contains(new Point(column, row))) {
                         gui.getPanel().clearHighlights();
                         board.movePlayer(row, column);
-                        moving = false;
+                        fields.clear();
                     }
                 }
             }
@@ -77,7 +83,7 @@ public class Main {
                 System.out.println("Center clicked: " + row + ", " + column);
                 gui.getPanel().clearHighlights();
                 gui.getPanel().highlightCenter(row, column);
-                moving = false;
+                fields.clear();
             }
 
             @Override
@@ -85,7 +91,7 @@ public class Main {
                 System.out.println("Horizontal wall clicked: " + row + ", " + column);
                 gui.getPanel().clearHighlights();
                 gui.getPanel().highlightHorizontalWall(row, column);
-                moving = false;
+                fields.clear();
             }
 
             @Override
@@ -93,7 +99,7 @@ public class Main {
                 System.out.println("Vertical wall clicked: " + row + ", " + column);
                 gui.getPanel().clearHighlights();
                 gui.getPanel().highlightVerticalWall(row, column);
-                moving = false;
+                fields.clear();
             }
         });
 
