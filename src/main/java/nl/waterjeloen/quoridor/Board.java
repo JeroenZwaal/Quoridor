@@ -4,8 +4,8 @@ public class Board {
     private final int size;
     private final Player player1;
     private final Player player2;
-    private final boolean horizontalWalls[][];
-    private final boolean verticalWalls[][];
+    private final boolean[][] horizontalWalls;
+    private final boolean[][] verticalWalls;
 
     public Board(int size, Player player1, Player player2) {
         this.size = size;
