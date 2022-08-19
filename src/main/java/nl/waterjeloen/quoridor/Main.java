@@ -82,13 +82,26 @@ public class Main {
             public void centerClicked(int row, int column) {
                 System.out.println("Center clicked: " + row + ", " + column);
                 gui.getPanel().clearHighlights();
-                gui.getPanel().highlightCenter(row, column);
-                fields.clear();
 
-                gui.getPanel().highlightHorizontalWall(row, column + 1);
-                gui.getPanel().highlightHorizontalWall(row , column);
-                gui.getPanel().highlightVerticalWall(row + 1 , column);
-                gui.getPanel().highlightVerticalWall(row, column);
+                if (!board.hasHorizontalWall(row, column) && !board.hasVerticalWall(row, column)) {
+                    if (board.hasHorizontalWall(row, column - 1)) {
+                        gui.getPanel().highlightVerticalWall(row + 1, column);
+                        gui.getPanel().highlightVerticalWall(row, column);
+                    }
+                    if (board.hasVerticalWall(row + 1, column)) {
+                        gui.getPanel().highlightHorizontalWall(row, column + 1);
+                        gui.getPanel().highlightHorizontalWall(row , column);
+                    }
+
+                    gui.getPanel().highlightCenter(row, column);
+                }
+                else {
+                    gui.getPanel().highlightHorizontalWall(row, column + 1);
+                    gui.getPanel().highlightHorizontalWall(row , column);
+                    gui.getPanel().highlightVerticalWall(row + 1, column);
+                    gui.getPanel().highlightVerticalWall(row, column);
+                    //gui.getPanel().clearHighlights();
+                }
             }
 
             @Override
