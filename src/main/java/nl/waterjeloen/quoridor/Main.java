@@ -14,6 +14,7 @@ public class Main {
         gui.getPanel().addListener(new BoardListener() {
             private final List<Point> fields = new ArrayList<>();
 
+
             @Override
             public void fieldClicked(int row, int column) {
                 final Player player = board.getCurrentPlayer();
@@ -84,23 +85,16 @@ public class Main {
                 gui.getPanel().clearHighlights();
 
                 if (!board.hasHorizontalWall(row, column) && !board.hasVerticalWall(row, column)) {
-                    if (board.hasHorizontalWall(row, column - 1)) {
-                        gui.getPanel().highlightVerticalWall(row + 1, column);
-                        gui.getPanel().highlightVerticalWall(row, column);
-                    }
-                    if (board.hasVerticalWall(row + 1, column)) {
+                    if (!board.hasHorizontalWall(row, column - 1) && !board.hasHorizontalWall(row, column + 1)) {
                         gui.getPanel().highlightHorizontalWall(row, column + 1);
-                        gui.getPanel().highlightHorizontalWall(row , column);
+                        gui.getPanel().highlightHorizontalWall(row, column);
                     }
-
+                    if (!board.hasVerticalWall(row + 1, column) && !board.hasVerticalWall(row - 1, column))  {
+                        gui.getPanel().highlightVerticalWall(row + 1, column);
+                        gui.getPanel().highlightVerticalWall(row , column);
+                    }
                     gui.getPanel().highlightCenter(row, column);
-                }
-                else {
-                    gui.getPanel().highlightHorizontalWall(row, column + 1);
-                    gui.getPanel().highlightHorizontalWall(row , column);
-                    gui.getPanel().highlightVerticalWall(row + 1, column);
-                    gui.getPanel().highlightVerticalWall(row, column);
-                    //gui.getPanel().clearHighlights();
+                    fields.clear();
                 }
             }
 
@@ -108,26 +102,40 @@ public class Main {
             public void horizontalWallClicked(int row, int column) {
                 System.out.println("Horizontal wall clicked: " + row + ", " + column);
                 gui.getPanel().clearHighlights();
-                gui.getPanel().highlightHorizontalWall(row, column);
-                fields.clear();
 
-                gui.getPanel().highlightHorizontalWall(row, column - 1);
-                gui.getPanel().highlightHorizontalWall(row, column + 1);
-                gui.getPanel().highlightCenter(row, column - 1);
-                gui.getPanel().highlightCenter(row, column);
+                if (!board.hasHorizontalWall(row, column - 1) && !board.hasHorizontalWall(row, column)) {
+                    if (!board.hasVerticalWall(row, column) && !board.hasHorizontalWall(row, column + 1)) {
+                        gui.getPanel().highlightCenter(row, column);
+                        gui.getPanel().highlightHorizontalWall(row, column + 1);
+                    }
+                    if (!board.hasVerticalWall(row, column - 1) && !board.hasHorizontalWall(row, column - 2)) {
+                        gui.getPanel().highlightCenter(row, column - 1);
+                        gui.getPanel().highlightHorizontalWall(row, column - 1);
+                    }
+                    gui.getPanel().highlightHorizontalWall(row, column);
+                    fields.clear();
+                }
+
+
             }
 
             @Override
             public void verticalWallClicked(int row, int column) {
                 System.out.println("Vertical wall clicked: " + row + ", " + column);
                 gui.getPanel().clearHighlights();
-                gui.getPanel().highlightVerticalWall(row, column);
-                fields.clear();
 
-                gui.getPanel().highlightVerticalWall(row - 1, column);
-                gui.getPanel().highlightVerticalWall(row + 1, column);
-                gui.getPanel().highlightCenter(row - 1, column);
-                gui.getPanel().highlightCenter(row, column);
+                if (!board.hasVerticalWall(row - 1, column) && !board.hasVerticalWall(row, column)) {
+                    if (!board.hasVerticalWall(row + 1, column) && !board.hasHorizontalWall(row, column)) {
+                        gui.getPanel().highlightVerticalWall(row + 1, column);
+                        gui.getPanel().highlightCenter(row, column);
+                    }
+                    if (!board.hasVerticalWall(row - 2, column) && !board.hasHorizontalWall(row - 1, column)) {
+                        gui.getPanel().highlightCenter(row - 1, column);
+                        gui.getPanel().highlightVerticalWall(row - 1, column);
+                    }
+                    gui.getPanel().highlightVerticalWall(row, column);
+                    fields.clear();
+                }
             }
         });
 
