@@ -45,6 +45,7 @@ public class Board {
     public void addHorizontalWall(int row, int column) {
         if (isValidWall(row, column)) {
             horizontalWalls[row][column] = true;
+            currentPlayer = (currentPlayer == player1) ? player2 : player1;
         }
     }
 
@@ -55,6 +56,7 @@ public class Board {
     public void addVerticalWall(int row, int column) {
         if (isValidWall(row, column)) {
             verticalWalls[row][column] = true;
+            currentPlayer = (currentPlayer == player1) ? player2 : player1;
         }
     }
 
