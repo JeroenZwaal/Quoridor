@@ -59,23 +59,31 @@ public class BoardPanel extends JComponent {
     }
 
     public void highlightField(int row, int column) {
-        highlights.add(new Rectangle(column * 7, row * 7, 6, 6));
-        repaint();
+        if ((row >= 0) && (column >= 0) && !(row >= 9) && !(column >= 9)) {
+            highlights.add(new Rectangle(column * 7, row * 7, 6, 6));
+            repaint();
+        }
     }
 
     public void highlightCenter(int row, int column) {
-        highlights.add(new Rectangle(column * 7 + 6, row * 7 + 6, 1, 1));
-        repaint();
+        if ((row >= 0) && (column >= 0) && !(row >= 8) && !(column >= 8)) {
+            highlights.add(new Rectangle(column * 7 + 6, row * 7 + 6, 1, 1));
+            repaint();
+        }
     }
 
     public void highlightHorizontalWall(int row, int column) {
-        highlights.add(new Rectangle(column * 7, row * 7 + 6, 6, 1));
-        repaint();
+        if ((row >= 0) && (column >= 0) && !(row >= 9) && !(column >= 9))  {
+            highlights.add(new Rectangle(column * 7, row * 7 + 6, 6, 1));
+            repaint();
+        }
     }
 
     public void highlightVerticalWall(int row, int column) {
-        highlights.add(new Rectangle(column * 7 + 6, row * 7, 1, 6));
-        repaint();
+        if ((row >= 0) && (column >= 0) && !(row >= 9) && !(column >= 9)) {
+            highlights.add(new Rectangle(column * 7 + 6, row * 7, 1, 6));
+            repaint();
+        }
     }
 
     public void clearHighlights() {

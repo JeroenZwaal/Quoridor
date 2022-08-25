@@ -84,7 +84,6 @@ public class Main {
 
             @Override
             public void centerClicked(int row, int column) {
-                System.out.println("Center clicked: " + row + ", " + column);
                 gui.getPanel().clearHighlights();
 
                 if (!board.hasHorizontalWall(row, column) && !board.hasVerticalWall(row, column)) {
@@ -109,7 +108,6 @@ public class Main {
 
             @Override
             public void horizontalWallClicked(int row, int column) {
-                System.out.println("Horizontal wall clicked: " + row + ", " + column);
                 gui.getPanel().clearHighlights();
 
                 final Point location = hwalls.get(new Point(row, column));
@@ -141,7 +139,6 @@ public class Main {
 
             @Override
             public void verticalWallClicked(int row, int column) {
-                System.out.println("Vertical wall clicked: " + row + ", " + column);
                 gui.getPanel().clearHighlights();
 
                 final Point location = vwalls.get(new Point(row, column));
