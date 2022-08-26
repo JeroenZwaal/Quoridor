@@ -1,6 +1,5 @@
 package nl.waterjeloen.quoridor;
 
-import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,9 +13,9 @@ public class Main {
         final GUI gui = new GUI(board);
         gui.setVisible(true);
         gui.getPanel().addListener(new BoardListener() {
-            private final List<Point> fields = new ArrayList<>();
-            private final Map<Point, Point> hwalls = new HashMap<>();
-            private final Map<Point, Point> vwalls = new HashMap<>();
+            private final List<Location> fields = new ArrayList<>();
+            private final Map<Location, Location> hwalls = new HashMap<>();
+            private final Map<Location, Location> vwalls = new HashMap<>();
 
             @Override
             public void fieldClicked(int row, int column) {
@@ -29,10 +28,10 @@ public class Main {
                     if (!board.hasHorizontalWall(row, column) && !board.hasHorizontalWall(row, column - 1)) {
                         if (board.hasPlayer(row + 1, column)) {
                             if (!board.hasHorizontalWall(row + 1, column) && !board.hasHorizontalWall(row + 1, column - 1)) {
-                                fields.add(new Point(column, row + 2));
+                                fields.add(new Location(row + 1, column));
                             }
                         } else {
-                            fields.add(new Point(column, row + 1));
+                            fields.add(new Location(row + 1, column));
                         }
                     }
 
@@ -40,10 +39,10 @@ public class Main {
                     if (!board.hasHorizontalWall(row - 1, column) && !board.hasHorizontalWall(row - 1, column - 1)) {
                         if (board.hasPlayer(row - 1, column)) {
                             if (!board.hasHorizontalWall(row - 2, column) && !board.hasHorizontalWall(row - 2, column - 1)) {
-                                fields.add(new Point(column, row - 2));
+                                fields.add(new Location(row - 2, column));
                             }
                         } else {
-                            fields.add(new Point(column, row - 1));
+                            fields.add(new Location(row - 1, column));
                         }
                     }
 
@@ -51,10 +50,10 @@ public class Main {
                     if (!board.hasVerticalWall(row, column ) && !board.hasVerticalWall(row - 1, column)) {
                         if (board.hasPlayer(row , column + 1)) {
                             if (!board.hasVerticalWall(row, column + 1 ) && !board.hasVerticalWall(row - 1, column + 1)) {
-                                fields.add(new Point(column + 2, row));
+                                fields.add(new Location(row, column + 2));
                             }
                         } else {
-                            fields.add(new Point(column + 1, row));
+                            fields.add(new Location(row, column + 1));
                         }
                     }
 
@@ -62,18 +61,18 @@ public class Main {
                     if (!board.hasVerticalWall(row, column -1 ) && !board.hasVerticalWall(row - 1, column - 1)) {
                         if (board.hasPlayer(row, column - 1)){
                             if (!board.hasVerticalWall(row, column - 2) && !board.hasVerticalWall(row - 1, column - 2)) {
-                                fields.add(new Point(column - 2, row));
+                                fields.add(new Location(row, column - 2));
                             }
                         } else {
-                            fields.add(new Point(column - 1, row));
+                            fields.add(new Location(row, column - 1));
                         }
                     }
 
-                    for (Point f : fields) {
-                        gui.getPanel().highlightField(f.y, f.x);
+                    for (Location f : fields) {
+                        gui.getPanel().highlightField(f.row, f.column);
                     }
                 } else if (!fields.isEmpty()) {
-                    if (fields.contains(new Point(column, row))) {
+                    if (fields.contains(new Location(row, column))) {
                         gui.getPanel().clearHighlights();
                         board.movePlayer(row, column);
                         fields.clear();
@@ -91,15 +90,15 @@ public class Main {
                         gui.getPanel().highlightHorizontalWall(row, column + 1);
                         gui.getPanel().highlightHorizontalWall(row, column);
 
-                        hwalls.put(new Point(row, column), new Point(row, column));
-                        hwalls.put(new Point(row, column + 1), new Point(row, column));
+                        hwalls.put(new Location(row, column), new Location(row, column));
+                        hwalls.put(new Location(row, column + 1), new Location(row, column));
                     }
                     if (!board.hasVerticalWall(row + 1, column) && !board.hasVerticalWall(row - 1, column))  {
                         gui.getPanel().highlightVerticalWall(row + 1, column);
                         gui.getPanel().highlightVerticalWall(row , column);
 
-                        vwalls.put(new Point(row, column), new Point(row, column));
-                        vwalls.put(new Point(row + 1, column), new Point(row, column));
+                        vwalls.put(new Location(row, column), new Location(row, column));
+                        vwalls.put(new Location(row + 1, column), new Location(row, column));
                     }
                     gui.getPanel().highlightCenter(row, column);
                     fields.clear();
@@ -110,9 +109,9 @@ public class Main {
             public void horizontalWallClicked(int row, int column) {
                 gui.getPanel().clearHighlights();
 
-                final Point location = hwalls.get(new Point(row, column));
+                final Location location = hwalls.get(new Location(row, column));
                 if (location != null) {
-                    board.addHorizontalWall(location.x, location.y);
+                    board.addHorizontalWall(location.row, location.column);
                     hwalls.clear();
                     return;
                 }
@@ -122,28 +121,26 @@ public class Main {
                         gui.getPanel().highlightCenter(row, column);
                         gui.getPanel().highlightHorizontalWall(row, column + 1);
 
-                        hwalls.put(new Point(row, column + 1), new Point(row, column));
+                        hwalls.put(new Location(row, column + 1), new Location(row, column));
                     }
                     if (!board.hasVerticalWall(row, column - 1) && !board.hasHorizontalWall(row, column - 2)) {
                         gui.getPanel().highlightCenter(row, column - 1);
                         gui.getPanel().highlightHorizontalWall(row, column - 1);
 
-                        hwalls.put(new Point(row, column - 1), new Point(row, column - 1));
+                        hwalls.put(new Location(row, column - 1), new Location(row, column - 1));
                     }
                     gui.getPanel().highlightHorizontalWall(row, column);
                     fields.clear();
                 }
-
-
             }
 
             @Override
             public void verticalWallClicked(int row, int column) {
                 gui.getPanel().clearHighlights();
 
-                final Point location = vwalls.get(new Point(row, column));
+                final Location location = vwalls.get(new Location(row, column));
                 if (location != null) {
-                    board.addVerticalWall(location.x, location.y);
+                    board.addVerticalWall(location.row, location.column);
                     vwalls.clear();
                     return;
                 }
@@ -153,13 +150,13 @@ public class Main {
                         gui.getPanel().highlightVerticalWall(row + 1, column);
                         gui.getPanel().highlightCenter(row, column);
 
-                        vwalls.put(new Point(row + 1, column), new Point(row, column));
+                        vwalls.put(new Location(row + 1, column), new Location(row, column));
                     }
                     if (!board.hasVerticalWall(row - 2, column) && !board.hasHorizontalWall(row - 1, column)) {
                         gui.getPanel().highlightCenter(row - 1, column);
                         gui.getPanel().highlightVerticalWall(row - 1, column);
 
-                        vwalls.put(new Point(row - 1, column), new Point(row - 1, column));
+                        vwalls.put(new Location(row - 1, column), new Location(row - 1, column));
                     }
                     gui.getPanel().highlightVerticalWall(row, column);
                     fields.clear();
