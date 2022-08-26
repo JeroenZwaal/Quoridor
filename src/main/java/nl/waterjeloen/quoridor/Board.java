@@ -1,18 +1,18 @@
 package nl.waterjeloen.quoridor;
 
+import java.util.List;
+
 public class Board {
     private final int size;
-    private final Player player1;
-    private final Player player2;
-    private Player currentPlayer;
+    private final List<Player> players;
+    private int currentPlayer;
     private final boolean[][] horizontalWalls;
     private final boolean[][] verticalWalls;
 
     public Board(int size, Player player1, Player player2) {
         this.size = size;
-        this.player1 = player1;
-        this.player2 = player2;
-        this.currentPlayer = player1;
+        this.players = List.of(player1, player2);
+        this.currentPlayer = 0;
         this.horizontalWalls = new boolean[size - 1][size - 1];
         this.verticalWalls = new boolean[size - 1][size - 1];
     }
@@ -21,21 +21,21 @@ public class Board {
         return size;
     }
 
-    public Player getPlayer1() {
-        return player1;
+    public int getPlayerCount() {
+        return players.size();
     }
 
-    public Player getPlayer2() {
-        return player2;
+    public Player getPlayer(int index) {
+        return players.get(index);
     }
 
     public Player getCurrentPlayer() {
-        return currentPlayer;
+        return getPlayer(currentPlayer);
     }
 
     public void movePlayer(int row, int column) {
-        currentPlayer.changePosition(row, column);
-        currentPlayer = (currentPlayer == player1) ? player2 : player1;
+        getCurrentPlayer().changePosition(row, column);
+        nextPlayer();
     }
 
     public boolean hasHorizontalWall(int row, int column) {
@@ -45,7 +45,7 @@ public class Board {
     public void addHorizontalWall(int row, int column) {
         if (isValidWall(row, column)) {
             horizontalWalls[row][column] = true;
-            currentPlayer = (currentPlayer == player1) ? player2 : player1;
+            nextPlayer();
         }
     }
 
@@ -56,7 +56,7 @@ public class Board {
     public void addVerticalWall(int row, int column) {
         if (isValidWall(row, column)) {
             verticalWalls[row][column] = true;
-            currentPlayer = (currentPlayer == player1) ? player2 : player1;
+            nextPlayer();
         }
     }
 
@@ -65,7 +65,10 @@ public class Board {
     }
 
     public boolean hasPlayer(int row, int column) {
-        return (player1.getRow() == row && player1.getColumn() == column)
-            || (player2.getRow() == row && player2.getColumn() == column);
+        return players.stream().anyMatch(p -> p.getRow() == row && p.getColumn() == column);
+    }
+
+    private void nextPlayer() {
+        currentPlayer = (currentPlayer + 1) % players.size();
     }
 }

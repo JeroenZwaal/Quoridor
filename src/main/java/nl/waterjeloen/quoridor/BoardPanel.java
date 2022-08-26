@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BoardPanel extends JComponent {
+    private static final Color[] PLAYER_COLORS = { Color.RED, Color.BLUE };
+
     private final Board board;
     private final List<BoardListener> listeners;
     private final List<Rectangle> highlights;
@@ -135,18 +137,15 @@ public class BoardPanel extends JComponent {
                 cell.width * r.width,
                 cell.height * r.height);
         }
-        g.setColor(Color.BLUE);
-        g.fillOval(
-            cell.x + cell.width * (board.getPlayer1().getColumn() * 7 + 1),
-            cell.y + cell.height * (board.getPlayer1().getRow() * 7 + 1),
+        for (int i = 0; i < board.getPlayerCount(); ++i) {
+            final Player player = board.getPlayer(i);
+            g.setColor(PLAYER_COLORS[i]);
+            g.fillOval(
+            cell.x + cell.width * (player.getColumn() * 7 + 1),
+            cell.y + cell.height * (player.getRow() * 7 + 1),
             cell.width * 4,
             cell.height * 4);
-        g.setColor(Color.RED);
-        g.fillOval(
-            cell.x + cell.width * (board.getPlayer2().getColumn() * 7 + 1),
-            cell.y + cell.height * (board.getPlayer2().getRow() * 7 + 1),
-            cell.width * 4,
-            cell.height * 4);
+        }
     }
 
     private Rectangle calculateCell() {
