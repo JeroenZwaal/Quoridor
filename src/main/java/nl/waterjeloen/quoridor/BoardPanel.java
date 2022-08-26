@@ -36,20 +36,19 @@ public class BoardPanel extends JComponent {
 
                 final int cellX = (x - cell.x) / cell.width;
                 final int cellY = (y - cell.y) / cell.height;
+                final Location location = new Location(cellY / 7, cellX / 7);
 
-                final int row = cellY / 7;
-                final int column = cellX / 7;
                 final boolean isHorizontalWall = cellY % 7 == 6;
                 final boolean isVerticalWall = cellX % 7 == 6;
                 for (BoardListener l : listeners) {
                     if (!isHorizontalWall && !isVerticalWall) {
-                        l.fieldClicked(row, column);
+                        l.fieldClicked(location);
                     } else if (isHorizontalWall && isVerticalWall) {
-                        l.centerClicked(row, column);
+                        l.centerClicked(location);
                     } else if (isHorizontalWall) {
-                        l.horizontalWallClicked(row, column);
+                        l.horizontalWallClicked(location);
                     } else { // (isVerticalWall)
-                        l.verticalWallClicked(row, column);
+                        l.verticalWallClicked(location);
                     }
                 }
             }
@@ -60,30 +59,30 @@ public class BoardPanel extends JComponent {
         listeners.add(listener);
     }
 
-    public void highlightField(int row, int column) {
-        if ((row >= 0) && (column >= 0) && !(row >= 9) && !(column >= 9)) {
-            highlights.add(new Rectangle(column * 7, row * 7, 6, 6));
+    public void highlightField(Location location) {
+        if (location.isValid(board.getSize())) {
+            highlights.add(new Rectangle(location.column * 7, location.row * 7, 6, 6));
             repaint();
         }
     }
 
-    public void highlightCenter(int row, int column) {
-        if ((row >= 0) && (column >= 0) && !(row >= 8) && !(column >= 8)) {
-            highlights.add(new Rectangle(column * 7 + 6, row * 7 + 6, 1, 1));
+    public void highlightCenter(Location location) {
+        if (location.isValid(board.getSize() - 1)) {
+            highlights.add(new Rectangle(location.column * 7 + 6, location.row * 7 + 6, 1, 1));
             repaint();
         }
     }
 
-    public void highlightHorizontalWall(int row, int column) {
-        if ((row >= 0) && (column >= 0) && !(row >= 9) && !(column >= 9))  {
-            highlights.add(new Rectangle(column * 7, row * 7 + 6, 6, 1));
+    public void highlightHorizontalWall(Location location) {
+        if (location.isValid(board.getSize() - 1, board.getSize())) {
+            highlights.add(new Rectangle(location.column * 7, location.row * 7 + 6, 6, 1));
             repaint();
         }
     }
 
-    public void highlightVerticalWall(int row, int column) {
-        if ((row >= 0) && (column >= 0) && !(row >= 9) && !(column >= 9)) {
-            highlights.add(new Rectangle(column * 7 + 6, row * 7, 1, 6));
+    public void highlightVerticalWall(Location location) {
+        if (location.isValid(board.getSize(), board.getSize() - 1)) {
+            highlights.add(new Rectangle(location.column * 7 + 6, location.row * 7, 1, 6));
             repaint();
         }
     }
@@ -113,14 +112,15 @@ public class BoardPanel extends JComponent {
         g.setColor(Color.ORANGE);
         for (int r = 0; r < board.getSize() - 1; ++r) {
             for (int c = 0; c < board.getSize() - 1; ++c) {
-                if (board.hasHorizontalWall(r, c)) {
+                final Location location = new Location(r, c);
+                if (board.hasHorizontalWall(location)) {
                     g.fillRect(
                         cell.x + cell.width * c * 7,
                         cell.y + cell.height * (r * 7 + 6),
                         cell.width * 13,
                         cell.height);
                 }
-                if (board.hasVerticalWall(r, c)) {
+                if (board.hasVerticalWall(location)) {
                     g.fillRect(
                         cell.x + cell.width * (c * 7 + 6),
                         cell.y + cell.height * r * 7,
@@ -141,8 +141,8 @@ public class BoardPanel extends JComponent {
             final Player player = board.getPlayer(i);
             g.setColor(PLAYER_COLORS[i]);
             g.fillOval(
-            cell.x + cell.width * (player.getColumn() * 7 + 1),
-            cell.y + cell.height * (player.getRow() * 7 + 1),
+            cell.x + cell.width * (player.getLocation().column * 7 + 1),
+            cell.y + cell.height * (player.getLocation().row * 7 + 1),
             cell.width * 4,
             cell.height * 4);
         }

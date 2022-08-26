@@ -33,39 +33,39 @@ public class Board {
         return getPlayer(currentPlayer);
     }
 
-    public void movePlayer(int row, int column) {
-        getCurrentPlayer().changePosition(row, column);
+    public void movePlayer(Location location) {
+        getCurrentPlayer().changeLocation(location);
         nextPlayer();
     }
 
-    public boolean hasHorizontalWall(int row, int column) {
-        return isValidWall(row, column) && horizontalWalls[row][column];
+    public boolean hasHorizontalWall(Location location) {
+        return isValidWall(location) && horizontalWalls[location.row][location.column];
     }
 
-    public void addHorizontalWall(int row, int column) {
-        if (isValidWall(row, column)) {
-            horizontalWalls[row][column] = true;
+    public void addHorizontalWall(Location location) {
+        if (isValidWall(location)) {
+            horizontalWalls[location.row][location.column] = true;
             nextPlayer();
         }
     }
 
-    public boolean hasVerticalWall(int row, int column) {
-        return isValidWall(row, column) && verticalWalls[row][column];
+    public boolean hasVerticalWall(Location location) {
+        return isValidWall(location) && verticalWalls[location.row][location.column];
     }
 
-    public void addVerticalWall(int row, int column) {
-        if (isValidWall(row, column)) {
-            verticalWalls[row][column] = true;
+    public void addVerticalWall(Location location) {
+        if (isValidWall(location)) {
+            verticalWalls[location.row][location.column] = true;
             nextPlayer();
         }
     }
 
-    private boolean isValidWall(int row, int column) {
-        return (row >= 0 && row < size - 1 && column >= 0 && column < size - 1);
+    private boolean isValidWall(Location location) {
+        return location.isValid(horizontalWalls.length, verticalWalls.length);
     }
 
-    public boolean hasPlayer(int row, int column) {
-        return players.stream().anyMatch(p -> p.getRow() == row && p.getColumn() == column);
+    public boolean hasPlayer(Location location) {
+        return players.stream().anyMatch(p -> p.getLocation().equals(location));
     }
 
     private void nextPlayer() {

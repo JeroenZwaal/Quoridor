@@ -11,16 +11,69 @@ public class Location {
         this.column = column;
     }
 
+    public Location left() {
+        return left(1);
+    }
+
+    public Location left(int amount) {
+        return new Location(row, column - amount);
+    }
+
+    public Location right() {
+        return right(1);
+    }
+
+    public Location right(int amount) {
+        return new Location(row, column + amount);
+    }
+
+    public Location up() {
+        return up(1);
+    }
+
+    public Location up(int amount) {
+        return new Location(row - amount, column);
+    }
+
+    public Location down() {
+        return down(1);
+    }
+
+    public Location down(int amount) {
+        return new Location(row + amount, column);
+    }
+
+    public boolean isValid(int size) {
+        return isValid(size, size);
+    }
+
+    public boolean isValid(int rowCount, int columnCount) {
+        return isRowValid(rowCount) && isColumnValid(columnCount);
+    }
+
+    public boolean isRowValid(int rowCount) {
+        return (row >= 0) && (row < rowCount);
+    }
+
+    public boolean isColumnValid(int columnCount) {
+        return (column >= 0) && (column < columnCount);
+    }
+
     @Override
-    public boolean equals(Object that) {
-        if (this == that) return true;
-        if (that == null || getClass() != that.getClass()) return false;
-        final Location location = (Location) that;
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        final Location location = (Location) object;
         return row == location.row && column == location.column;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(row, column);
+    }
+
+    @Override
+    public String toString() {
+        return "(" + row + "," + column + ")";
     }
 }

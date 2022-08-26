@@ -2,30 +2,23 @@ package nl.waterjeloen.quoridor;
 
 public class Player {
     private final String name;
-    private int row;
-    private int column;
+    private Location location;
 
-    public Player(String name, int row, int column) {
+    public Player(String name, Location location) {
         this.name = name;
-        this.row = row;
-        this.column = column;
+        this.location = location;
     }
 
     public String getName() {
         return name;
     }
 
-    public int getRow() {
-        return row;
+    public Location getLocation() {
+        return location;
     }
 
-    public int getColumn() {
-        return column;
-    }
-
-    public void changePosition(int row, int column) {
-        this.row = row;
-        this.column = column;
+    public void changeLocation(Location location) {
+        this.location = location;
     }
 
     public String toString() {
