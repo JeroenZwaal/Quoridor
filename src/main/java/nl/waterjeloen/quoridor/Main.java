@@ -31,53 +31,30 @@ public class Main {
 
                 final Player player = board.getCurrentPlayer();
                 if (fields.isEmpty() && location.equals(player.getLocation())) {
-
-                    // move down?
-                    if (!board.hasHorizontalWall(location) && !board.hasHorizontalWall(location.left())) {
-                        if (board.hasPlayer(location.down())) {
-                            if (!board.hasHorizontalWall(location.down()) && !board.hasHorizontalWall(location.down().left())) {
-                                fields.add(location.down(2));
-                            }
-                        } else {
-                            fields.add(location.down());
-                        }
-                    }
-
-                    // move up?
-                    if (!board.hasHorizontalWall(location.up()) && !board.hasHorizontalWall(location.up().left())) {
-                        if (board.hasPlayer(location.up())) {
-                            if (!board.hasHorizontalWall(location.up(2)) && !board.hasHorizontalWall(location.up(2).left())) {
-                                fields.add(location.up(2));
-                            }
-                        } else {
-                            fields.add(location.up());
-                        }
-                    }
-
-                    // move right?
-                    if (!board.hasVerticalWall(location) && !board.hasVerticalWall(location.up())) {
-                        if (board.hasPlayer(location.right())) {
-                            if (!board.hasVerticalWall(location.right(2)) && !board.hasVerticalWall(location.up().right())) {
-                                fields.add(location.right(2));
-                            }
-                        } else {
-                            fields.add(location.right());
-                        }
-                    }
-
-                    // move left?
-                    if (!board.hasVerticalWall(location.left()) && !board.hasVerticalWall(location.up().left())) {
-                        if (board.hasPlayer(location.left())){
-                            if (!board.hasVerticalWall(location.left(2)) && !board.hasVerticalWall(location.up().left(2))) {
-                                fields.add(location.left(2));
-                            }
-                        } else {
-                            fields.add(location.left());
-                        }
-                    }
+                    checkMove(location, Direction.DOWN, Direction.LEFT, Direction.RIGHT);
+                    checkMove(location, Direction.UP, Direction.LEFT, Direction.RIGHT);
+                    checkMove(location, Direction.LEFT, Direction.UP, Direction.DOWN);
+                    checkMove(location, Direction.RIGHT, Direction.UP, Direction.DOWN);
 
                     for (Location l : fields) {
                         gui.getPanel().highlightField(l);
+                    }
+                }
+            }
+
+            private void checkMove(Location location, Direction direction, Direction... andThen) {
+                if (!board.hasWall(location, direction)) {
+                    final Location next = location.go(direction);
+                    if (!board.hasPlayer(next)) {
+                        fields.add(next);
+                    } else if (!board.hasWall(next, direction)) {
+                        fields.add(next.go(direction));
+                    } else {
+                        for (Direction then : andThen) {
+                            if (!board.hasWall(next, then)) {
+                                fields.add(next.go(then));
+                            }
+                        }
                     }
                 }
             }

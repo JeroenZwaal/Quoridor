@@ -11,6 +11,18 @@ public class Location {
         this.column = column;
     }
 
+    public Location go(Direction direction) {
+        final int newRow = row + direction.rowDelta;
+        final int newColumn = column + direction.columnDelta;
+        return new Location(newRow, newColumn);
+    }
+
+    public Location wall(Direction side) {
+        final int newRow = row + (side.rowDelta - 1) / 2;
+        final int newColumn = column + (side.columnDelta - 1) / 2;
+        return new Location(newRow, newColumn);
+    }
+
     public Location left() {
         return left(1);
     }

@@ -33,9 +33,35 @@ public class Board {
         return getPlayer(currentPlayer);
     }
 
+    public boolean hasPlayer(Location location) {
+        return players.stream().anyMatch(p -> p.getLocation().equals(location));
+    }
+
     public void movePlayer(Location location) {
         getCurrentPlayer().changeLocation(location);
         nextPlayer();
+    }
+
+    public boolean hasWall(Location location, Direction side) {
+        final Location wallLocation = location.wall(side);
+        if (side.isHorizontal) {
+            final Location secondLocation = wallLocation.go(Direction.UP);
+            return (isValidWall(wallLocation) && verticalWalls[wallLocation.row][wallLocation.column]) ||
+                (isValidWall(secondLocation) && verticalWalls[secondLocation.row][secondLocation.column]);
+        } else {
+            final Location secondLocation = wallLocation.go(Direction.LEFT);
+            return (isValidWall(wallLocation) && horizontalWalls[wallLocation.row][wallLocation.column]) ||
+                (isValidWall(secondLocation) && horizontalWalls[secondLocation.row][secondLocation.column]);
+        }
+    }
+
+    public void addWall(Location location, Direction side, Direction direction) {
+        final Location wallLocation = location.wall(side).wall(direction);
+        if (isValidWall(wallLocation)) {
+            final boolean[][] walls = (side.isHorizontal) ? verticalWalls : horizontalWalls;
+            walls[wallLocation.row][wallLocation.column] = true;
+            nextPlayer();
+        }
     }
 
     public boolean hasHorizontalWall(Location location) {
@@ -62,10 +88,6 @@ public class Board {
 
     private boolean isValidWall(Location location) {
         return location.isValid(horizontalWalls.length, verticalWalls.length);
-    }
-
-    public boolean hasPlayer(Location location) {
-        return players.stream().anyMatch(p -> p.getLocation().equals(location));
     }
 
     private void nextPlayer() {
