@@ -40,7 +40,7 @@ public class Main {
                         gui.getPanel().highlightField(l);
                     }
                 }
-            }
+                }
 
             private void checkMove(Location location, Direction direction, Direction... andThen) {
                 if (!board.hasWall(location, direction)) {

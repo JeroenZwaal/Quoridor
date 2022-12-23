@@ -71,6 +71,7 @@ public class Board {
     public void addHorizontalWall(Location location) {
         if (isValidWall(location)) {
             horizontalWalls[location.row][location.column] = true;
+            getCurrentPlayer().removeWall();
             nextPlayer();
         }
     }
@@ -82,6 +83,7 @@ public class Board {
     public void addVerticalWall(Location location) {
         if (isValidWall(location)) {
             verticalWalls[location.row][location.column] = true;
+            getCurrentPlayer().removeWall();
             nextPlayer();
         }
     }

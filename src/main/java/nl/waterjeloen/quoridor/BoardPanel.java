@@ -145,6 +145,8 @@ public class BoardPanel extends JComponent {
             cell.y + cell.height * (player.getLocation().row * 7 + 1),
             cell.width * 4,
             cell.height * 4);
+            g.setColor(Color.WHITE);
+            g.drawString(Integer.toString(player.getWalls()), cell.x + cell.width * (player.getLocation().column * 7 + 1), cell.y + cell.height * (player.getLocation().row * 7 + 1));
         }
     }
 
