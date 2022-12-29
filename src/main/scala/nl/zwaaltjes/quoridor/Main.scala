@@ -6,7 +6,9 @@ object Main {
   def main(args: Array[String]): Unit = {
     val me = Player("me", Location(0, size / 2))
     val you = Player("you", Location(size - 1, size / 2))
-    val board = new Board(size, me, you)
+    val him = Player("him", Location(size / 2, 0))
+    val her = Player("her", Location(size / 2, size - 1))
+    val board = new Board(size, me, her, you, him)
     val gui = new GUI(board)
     gui.panel.addListener(new Listener(board, gui))
     gui.setVisible(true)
@@ -39,18 +41,20 @@ object Main {
       }
     }
 
-    private def checkMove(location: Location, direction: Direction, andThen: Direction*): Unit =
+    @annotation.tailrec
+    private def checkMove(location: Location, direction: Direction, andThen: Direction*): Unit = {
       if (!board.hasWall(location, direction)) {
         val next = location.go(direction)
         if (!board.hasPlayer(next))
           fields ::= next
-        else if (!board.hasWall(next, direction))
-          fields ::= next.go(direction)
-        else
+        else if (board.hasWall(next, direction))
           andThen.filterNot(board.hasWall(next, _)).foreach { d =>
             fields ::= next.go(d)
           }
+        else
+          checkMove(next, direction, andThen*)
       }
+    }
 
     override def centerClicked(location: Location): Unit = {
       reset()

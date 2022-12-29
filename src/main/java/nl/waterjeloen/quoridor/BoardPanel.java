@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Set;
 
 public class BoardPanel extends JComponent {
-    private static final Color[] PLAYER_COLORS = { Color.RED, Color.BLUE };
+    private static final Color[] PLAYER_COLORS = { Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW };
 
     private final Board board;
     private final List<BoardListener> listeners;
