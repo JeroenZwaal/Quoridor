@@ -110,6 +110,12 @@ class BoardPanel(board: Board) extends JComponent {
         cell.width * (side + 1) / 2,
         cell.height * (side + 1) / 2
       )
+      g.setColor(Color.white)
+      g.drawString(
+        player.walls.toString,
+        cell.x + cell.width * (player.location.column * side + 1),
+        cell.y + cell.height * (player.location.row * side + 1)
+      )
     }
   }
 
