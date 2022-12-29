@@ -13,6 +13,10 @@ object BoardPanel {
 class BoardPanel(board: Board) extends JComponent {
   import BoardPanel.*
 
+  private val colorMap = {
+    val entries = for (i <- 0 until board.playerCount) yield board.player(i) -> playerColors(i)
+    entries.toMap
+  }
   private var listeners = List.empty[Board.Listener]
   private var highlights = List.empty[Rectangle]
 
@@ -81,8 +85,12 @@ class BoardPanel(board: Board) extends JComponent {
     for {
       r <- 0 until board.size
       c <- 0 until board.size
+      location = Location(r, c)
     } {
-      val color = if (Location(r, c) == board.currentPlayer.location) Color.gray.darker else Color.black
+      val color = if (board.winner.isDefined) Color.black
+        else if (location == board.currentPlayer.location) Color.gray.darker
+        else if (board.currentPlayer.wins(location)) colorMap(board.currentPlayer).darker.darker
+        else Color.black
       g.setColor(color)
       g.fillRect(cell.x + cell.width * c * side, cell.y + cell.height * r * side, cell.width * (side - 1), cell.height * (side - 1))
     }

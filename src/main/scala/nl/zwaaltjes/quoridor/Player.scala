@@ -1,6 +1,11 @@
 package nl.zwaaltjes.quoridor
 
-final case class Player(name: String, private var playerLocation: Location, private var playerWalls: Int = 10) {
+final case class Player(
+  name: String,
+  wins: Location => Boolean,
+  private var playerLocation: Location,
+  private var playerWalls: Int = 10
+) {
   def location: Location =
     playerLocation
 
