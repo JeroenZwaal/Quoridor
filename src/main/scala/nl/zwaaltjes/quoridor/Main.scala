@@ -4,10 +4,10 @@ object Main {
   private val size = 9
 
   def main(args: Array[String]): Unit = {
-    val me = Player("me", Location(0, size / 2))
-    val you = Player("you", Location(size - 1, size / 2))
-    val him = Player("him", Location(size / 2, 0))
-    val her = Player("her", Location(size / 2, size - 1))
+    val me = Player("me", _.row == size - 1, Location(0, size / 2))
+    val you = Player("you", _.row == 0, Location(size - 1, size / 2))
+    val him = Player("him", _.column == size - 1, Location(size / 2, 0))
+    val her = Player("her", _.column == 0, Location(size / 2, size - 1))
     val board = new Board(size, me, her, you, him)
     val gui = new GUI(board)
     gui.panel.addListener(new Listener(board, gui))
@@ -27,6 +27,10 @@ object Main {
       if (highlighted) {
         gui.panel.clearHighlights()
         board.movePlayer(location)
+        board.winner.foreach { winner =>
+          gui.showMessage(s"Player '${winner.name}' wins!")
+          System.exit(0)
+        }
       } else {
         val player = board.currentPlayer
         if (fields.isEmpty && location == player.location) {
