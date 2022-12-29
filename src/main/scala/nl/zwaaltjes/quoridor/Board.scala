@@ -9,10 +9,9 @@ object Board {
   }
 }
 
-class Board(val size: Int, player1: Player, player2: Player) {
+class Board(val size: Int, players: Player*) {
   private val horizontalWalls = Array.fill(size - 1, size - 1)(false)
   private val verticalWalls = Array.fill(size - 1, size - 1)(false)
-  private val players = IndexedSeq(player1, player2)
   private var playerIndex = 0
 
   def playerCount: Int =

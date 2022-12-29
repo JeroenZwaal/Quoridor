@@ -5,7 +5,7 @@ import java.awt.event.{MouseAdapter, MouseEvent}
 import javax.swing.JComponent
 
 object BoardPanel {
-  private val playerColors = Array(Color.red, Color.blue)
+  private val playerColors = Array(Color.red, Color.blue, Color.green, Color.yellow)
 
   private val side = 7
 }
@@ -78,13 +78,16 @@ class BoardPanel(board: Board) extends JComponent {
     val g = graphics.asInstanceOf[Graphics2D]
     val cell = cellDimension
 
-    g.setColor(Color.black)
     for {
       r <- 0 until board.size
       c <- 0 until board.size
-    } g.fillRect(cell.x + cell.width * c * side, cell.y + cell.height * r * side, cell.width * (side - 1), cell.height * (side - 1))
+    } {
+      val color = if (Location(r, c) == board.currentPlayer.location) Color.gray.darker else Color.black
+      g.setColor(color)
+      g.fillRect(cell.x + cell.width * c * side, cell.y + cell.height * r * side, cell.width * (side - 1), cell.height * (side - 1))
+    }
 
-    g.setColor(Color.orange)
+    g.setColor(Color.orange.darker)
     for {
       r <- 0 until board.size - 1
       c <- 0 until board.size - 1
@@ -96,14 +99,14 @@ class BoardPanel(board: Board) extends JComponent {
         g.fillRect(cell.x + cell.width * ((c + 1) * side - 1), cell.y + cell.height * r * side, cell.width, cell.height * 13)
     }
 
-    g.setColor(Color.green)
+    g.setColor(Color.orange)
 
     for (r <- highlights) {
       g.fillRect(cell.x + cell.width * r.x, cell.y + cell.height * r.y, cell.width * r.width, cell.height * r.height)
     }
     for (i <- 0 until board.playerCount) {
       val player = board.player(i)
-      g.setColor(playerColors(i))
+      g.setColor(playerColors(i).darker)
       g.fillOval(
         cell.x + cell.width * (player.location.column * side + 1),
         cell.y + cell.height * (player.location.row * side + 1),
