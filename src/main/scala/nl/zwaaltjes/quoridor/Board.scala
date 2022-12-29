@@ -40,14 +40,14 @@ class Board(val size: Int, player1: Player, player2: Player) {
       (isValidWall(secondLocation) && walls(secondLocation.row)(secondLocation.column))
   }
 
-  def addWall(location: Location, side: Direction, direction: Direction): Unit = {
-    val wallLocation = location.wall(side).wall(direction)
-    if (isValidWall(wallLocation)) {
-      val walls = if (side.isHorizontal) verticalWalls else horizontalWalls
-      walls(wallLocation.row)(wallLocation.column) = true
-      nextPlayer()
-    }
-  }
+//  def addWall(location: Location, side: Direction, direction: Direction): Unit = {
+//    val wallLocation = location.wall(side).wall(direction)
+//    if (isValidWall(wallLocation)) {
+//      val walls = if (side.isHorizontal) verticalWalls else horizontalWalls
+//      walls(wallLocation.row)(wallLocation.column) = true
+//      nextPlayer()
+//    }
+//  }
 
   def hasHorizontalWall(location: Location): Boolean =
     isValidWall(location) && horizontalWalls(location.row)(location.column)
@@ -55,6 +55,7 @@ class Board(val size: Int, player1: Player, player2: Player) {
   def addHorizontalWall(location: Location): Unit =
     if (isValidWall(location)) {
       horizontalWalls(location.row)(location.column) = true
+      currentPlayer.useWall()
       nextPlayer()
     }
 
@@ -64,6 +65,7 @@ class Board(val size: Int, player1: Player, player2: Player) {
   def addVerticalWall(location: Location): Unit =
     if (isValidWall(location)) {
       verticalWalls(location.row)(location.column) = true
+      currentPlayer.useWall()
       nextPlayer()
     }
 

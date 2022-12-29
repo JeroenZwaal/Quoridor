@@ -55,7 +55,7 @@ object Main {
     override def centerClicked(location: Location): Unit = {
       reset()
 
-      if (!board.hasHorizontalWall(location) && !board.hasVerticalWall(location)) {
+      if (board.currentPlayer.hasWalls && !board.hasHorizontalWall(location) && !board.hasVerticalWall(location)) {
         if (!board.hasHorizontalWall(location.left) && !board.hasHorizontalWall(location.right)) {
           gui.panel.highlightHorizontalWall(location.right)
           gui.panel.highlightHorizontalWall(location)
@@ -79,7 +79,7 @@ object Main {
       wallLocation match {
         case Some(wall) =>
           board.addHorizontalWall(wall)
-        case None if !board.hasHorizontalWall(location.left) && !board.hasHorizontalWall(location) =>
+        case None if board.currentPlayer.hasWalls && !board.hasHorizontalWall(location.left) && !board.hasHorizontalWall(location) =>
           if (!board.hasVerticalWall(location) && !board.hasHorizontalWall(location.right)) {
             gui.panel.highlightCenter(location)
             gui.panel.highlightHorizontalWall(location.right)
@@ -102,7 +102,7 @@ object Main {
       wallLocation match {
         case Some(wall) =>
           board.addVerticalWall(wall)
-        case None if !board.hasVerticalWall(location.up) && !board.hasVerticalWall(location) =>
+        case None if board.currentPlayer.hasWalls && !board.hasVerticalWall(location.up) && !board.hasVerticalWall(location) =>
           if (!board.hasVerticalWall(location.down) && !board.hasHorizontalWall(location)) {
             gui.panel.highlightVerticalWall(location.down)
             gui.panel.highlightCenter(location)
