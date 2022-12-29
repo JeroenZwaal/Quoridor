@@ -21,6 +21,30 @@ class Board(val size: Int, players: Player*) {
   def winner: Option[Player] =
     Option.when(finished)(currentPlayer)
 
+  def reachableLocations(from: Location): Set[Location] = {
+    val visited = Array.fill(size, size)(false)
+
+    def recurse(location: Location): Unit = {
+      visited(location.row)(location.column) = true
+      for (direction <- Direction.values) {
+        if (!hasWall(location, direction)) {
+          val next = location.go(direction)
+          if (next.isValid(size, size) && !visited(next.row)(next.column))
+            recurse(next)
+        }
+      }
+    }
+
+    recurse(from)
+
+    val result = for {
+      r <- visited.indices
+      c <- visited(r).indices
+      if visited(r)(c)
+    } yield Location(r, c)
+    result.toSet
+  }
+
   def playerCount: Int =
     players.size
 
@@ -61,6 +85,14 @@ class Board(val size: Int, players: Player*) {
   def hasHorizontalWall(location: Location): Boolean =
     isValidWall(location) && horizontalWalls(location.row)(location.column)
 
+  def isHorizontalWallAllowed(location: Location): Boolean =
+    !finished && isValidWall(location) && {
+      horizontalWalls(location.row)(location.column) = true
+      val result = everyoneCanWin
+      horizontalWalls(location.row)(location.column) = false
+      result
+    }
+
   def addHorizontalWall(location: Location): Unit =
     if (!finished && isValidWall(location)) {
       horizontalWalls(location.row)(location.column) = true
@@ -71,11 +103,25 @@ class Board(val size: Int, players: Player*) {
   def hasVerticalWall(location: Location): Boolean =
     isValidWall(location) && verticalWalls(location.row)(location.column)
 
+  def isVerticalWallAllowed(location: Location): Boolean =
+    !finished && isValidWall(location) && {
+      verticalWalls(location.row)(location.column) = true
+      val result = everyoneCanWin
+      verticalWalls(location.row)(location.column) = false
+      result
+    }
+
   def addVerticalWall(location: Location): Unit =
     if (!finished && isValidWall(location)) {
       verticalWalls(location.row)(location.column) = true
       currentPlayer.useWall()
       nextPlayer()
+    }
+
+  private def everyoneCanWin: Boolean =
+    players.forall { player =>
+      val reachable = reachableLocations(player.location)
+      reachable.exists(player.wins)
     }
 
   private def isValidWall(location: Location): Boolean =

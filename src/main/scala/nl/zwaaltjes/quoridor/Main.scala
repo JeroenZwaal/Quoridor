@@ -64,19 +64,29 @@ object Main {
       reset()
 
       if (board.currentPlayer.hasWalls && !board.hasHorizontalWall(location) && !board.hasVerticalWall(location)) {
+        val (hbefore, vbefore) = (hwalls.size, vwalls.size)
         if (!board.hasHorizontalWall(location.left) && !board.hasHorizontalWall(location.right)) {
-          gui.panel.highlightHorizontalWall(location.right)
-          gui.panel.highlightHorizontalWall(location)
-          hwalls += location -> location
-          hwalls += location.right -> location
+          if (board.isHorizontalWallAllowed(location)) {
+            gui.panel.highlightHorizontalWall(location.right)
+            hwalls += location.right -> location
+          }
+          if (board.isHorizontalWallAllowed(location)) {
+            gui.panel.highlightHorizontalWall(location)
+            hwalls += location -> location
+          }
         }
         if (!board.hasVerticalWall(location.down) && !board.hasVerticalWall(location.up)) {
-          gui.panel.highlightVerticalWall(location.down)
-          gui.panel.highlightVerticalWall(location)
-          vwalls += location -> location
-          vwalls += location.down -> location
+          if (board.isVerticalWallAllowed(location)) {
+            gui.panel.highlightVerticalWall(location.down)
+            vwalls += location.down -> location
+          }
+          if (board.isVerticalWallAllowed(location)) {
+            gui.panel.highlightVerticalWall(location)
+            vwalls += location -> location
+          }
         }
-        gui.panel.highlightCenter(location)
+        if (hwalls.size > hbefore || vwalls.size > vbefore)
+          gui.panel.highlightCenter(location)
       }
     }
 
@@ -88,17 +98,23 @@ object Main {
         case Some(wall) =>
           board.addHorizontalWall(wall)
         case None if board.currentPlayer.hasWalls && !board.hasHorizontalWall(location.left) && !board.hasHorizontalWall(location) =>
+          val before = hwalls.size
           if (!board.hasVerticalWall(location) && !board.hasHorizontalWall(location.right)) {
-            gui.panel.highlightCenter(location)
-            gui.panel.highlightHorizontalWall(location.right)
-            hwalls += location.right -> location
+            if (board.isHorizontalWallAllowed(location)) {
+              gui.panel.highlightCenter(location)
+              gui.panel.highlightHorizontalWall(location.right)
+              hwalls += location.right -> location
+            }
           }
           if (!board.hasVerticalWall(location.left) && !board.hasHorizontalWall(location.left(2))) {
-            gui.panel.highlightCenter(location.left)
-            gui.panel.highlightHorizontalWall(location.left)
-            hwalls += location.left -> location.left
+            if (board.isHorizontalWallAllowed(location.left)) {
+              gui.panel.highlightCenter(location.left)
+              gui.panel.highlightHorizontalWall(location.left)
+              hwalls += location.left -> location.left
+            }
           }
-          gui.panel.highlightHorizontalWall(location)
+          if (hwalls.size > before)
+            gui.panel.highlightHorizontalWall(location)
         case _ =>
       }
     }
@@ -111,17 +127,23 @@ object Main {
         case Some(wall) =>
           board.addVerticalWall(wall)
         case None if board.currentPlayer.hasWalls && !board.hasVerticalWall(location.up) && !board.hasVerticalWall(location) =>
+          val before = vwalls.size
           if (!board.hasVerticalWall(location.down) && !board.hasHorizontalWall(location)) {
-            gui.panel.highlightVerticalWall(location.down)
-            gui.panel.highlightCenter(location)
-            vwalls += location.down -> location
+            if (board.isVerticalWallAllowed(location)) {
+              gui.panel.highlightVerticalWall(location.down)
+              gui.panel.highlightCenter(location)
+              vwalls += location.down -> location
+            }
           }
           if (!board.hasVerticalWall(location.up(2)) && !board.hasHorizontalWall(location.up)) {
-            gui.panel.highlightCenter(location.up)
-            gui.panel.highlightVerticalWall(location.up)
-            vwalls += location.up -> location.up
+            if (board.isVerticalWallAllowed(location.up)) {
+              gui.panel.highlightCenter(location.up)
+              gui.panel.highlightVerticalWall(location.up)
+              vwalls += location.up -> location.up
+            }
           }
-          gui.panel.highlightVerticalWall(location)
+          if (vwalls.size > before)
+            gui.panel.highlightVerticalWall(location)
         case _ =>
       }
     }

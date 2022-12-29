@@ -82,6 +82,7 @@ class BoardPanel(board: Board) extends JComponent {
     val g = graphics.asInstanceOf[Graphics2D]
     val cell = cellDimension
 
+    val reachable = board.reachableLocations(board.currentPlayer.location)
     for {
       r <- 0 until board.size
       c <- 0 until board.size
@@ -89,7 +90,7 @@ class BoardPanel(board: Board) extends JComponent {
     } {
       val color = if (board.winner.isDefined) Color.black
         else if (location == board.currentPlayer.location) Color.gray.darker
-        else if (board.currentPlayer.wins(location)) colorMap(board.currentPlayer).darker.darker
+        else if (board.currentPlayer.wins(location) && reachable.contains(location)) colorMap(board.currentPlayer).darker.darker
         else Color.black
       g.setColor(color)
       g.fillRect(cell.x + cell.width * c * side, cell.y + cell.height * r * side, cell.width * (side - 1), cell.height * (side - 1))
