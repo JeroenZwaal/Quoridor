@@ -9,12 +9,15 @@ public class Board {
     private final boolean[][] horizontalWalls;
     private final boolean[][] verticalWalls;
 
+    private boolean finished;
+
     public Board(int size, Player player1, Player player2) {
         this.size = size;
         this.players = List.of(player1, player2);
         this.currentPlayer = 0;
         this.horizontalWalls = new boolean[size - 1][size - 1];
         this.verticalWalls = new boolean[size - 1][size - 1];
+        this.finished = false;
     }
 
     public int getSize() {
@@ -38,12 +41,24 @@ public class Board {
     }
 
     public void movePlayer(Location location) {
-        getCurrentPlayer().changeLocation(location);
-        nextPlayer();
+        if (!finished) {
+            getCurrentPlayer().changeLocation(location);
+            if (!getCurrentPlayer().hasWon()) {
+                nextPlayer();
+            }
+            else {
+                endGame();
+            }
+        }
+    }
+
+    private void endGame() {
+        finished = true;
     }
 
     public boolean hasWall(Location location, Direction side) {
         final Location wallLocation = location.wall(side);
+
         if (side.isHorizontal) {
             final Location secondLocation = wallLocation.go(Direction.UP);
             return (isValidWall(wallLocation) && verticalWalls[wallLocation.row][wallLocation.column]) ||
@@ -69,7 +84,8 @@ public class Board {
     }
 
     public void addHorizontalWall(Location location) {
-        if (isValidWall(location)) {
+
+        if (isValidWall(location) && (!finished)) {
             horizontalWalls[location.row][location.column] = true;
             getCurrentPlayer().removeWall();
             nextPlayer();
@@ -81,7 +97,7 @@ public class Board {
     }
 
     public void addVerticalWall(Location location) {
-        if (isValidWall(location)) {
+        if (isValidWall(location) && (!finished)) {
             verticalWalls[location.row][location.column] = true;
             getCurrentPlayer().removeWall();
             nextPlayer();
@@ -96,3 +112,5 @@ public class Board {
         currentPlayer = (currentPlayer + 1) % players.size();
     }
 }
+
+

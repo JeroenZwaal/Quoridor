@@ -1,7 +1,6 @@
 package nl.waterjeloen.quoridor;
 
-import javax.swing.JFrame;
-import javax.swing.WindowConstants;
+import javax.swing.*;
 import java.awt.Dimension;
 
 public class GUI extends JFrame {
@@ -18,5 +17,9 @@ public class GUI extends JFrame {
 
     public BoardPanel getPanel() {
         return panel;
+    }
+
+    public void showMessage(String message) {
+        JOptionPane.showMessageDialog(this, message);
     }
 }

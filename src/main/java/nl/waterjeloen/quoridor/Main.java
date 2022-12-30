@@ -9,8 +9,8 @@ public class Main {
     private static final int SIZE = 9;
 
     public static void main(String[] args) {
-        final Player me = new Player("me", new Location(0, SIZE / 2));
-        final Player you = new Player("you", new Location(SIZE - 1, SIZE / 2));
+        final Player me = new Player("me", new Location(0, SIZE / 2), location -> location.row == SIZE - 1);
+        final Player you = new Player("you", new Location(SIZE - 1, SIZE / 2), location -> location.row == 0);
         final Board board = new Board(SIZE, me, you);
         final GUI gui = new GUI(board);
         gui.setVisible(true);
@@ -26,6 +26,10 @@ public class Main {
                 if (highlighted) {
                     gui.getPanel().clearHighlights();
                     board.movePlayer(location);
+                    if (board.getCurrentPlayer().hasWon()) {
+                        gui.showMessage("je hebt het spel gewonnen");
+                        System.exit(0);
+                    }
                     return;
                 }
 
