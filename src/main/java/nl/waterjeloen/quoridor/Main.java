@@ -63,7 +63,7 @@ public class Main {
             public void centerClicked(Location location) {
                 reset();
 
-                if (!board.hasHorizontalWall(location) && !board.hasVerticalWall(location)) {
+                if (!board.hasHorizontalWall(location) && !board.hasVerticalWall(location) && (board.getCurrentPlayer().hasWalls())) {
                     if (!board.hasHorizontalWall(location.left()) && !board.hasHorizontalWall(location.right())) {
                         gui.getPanel().highlightHorizontalWall(location.right());
                         gui.getPanel().highlightHorizontalWall(location);
@@ -92,7 +92,7 @@ public class Main {
                     return;
                 }
 
-                if (!board.hasHorizontalWall(location.left()) && !board.hasHorizontalWall(location)) {
+                if (!board.hasHorizontalWall(location.left()) && !board.hasHorizontalWall(location) && (board.getCurrentPlayer().hasWalls())) {
                     if (!board.hasVerticalWall(location) && !board.hasHorizontalWall(location.right())) {
                         gui.getPanel().highlightCenter(location);
                         gui.getPanel().highlightHorizontalWall(location.right());
@@ -118,7 +118,7 @@ public class Main {
                     return;
                 }
 
-                if (!board.hasVerticalWall(location.up()) && !board.hasVerticalWall(location)) {
+                if (!board.hasVerticalWall(location.up()) && !board.hasVerticalWall(location) && (board.getCurrentPlayer().hasWalls())) {
                     if (!board.hasVerticalWall(location.down()) && !board.hasHorizontalWall(location)) {
                         gui.getPanel().highlightVerticalWall(location.down());
                         gui.getPanel().highlightCenter(location);
