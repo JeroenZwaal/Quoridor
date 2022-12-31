@@ -1,10 +1,10 @@
 package nl.waterjeloen.quoridor;
 
-public class Direction {
-    public static final Direction DOWN = new Direction("down", 1, 0, false, true);
-    public static final Direction UP = new Direction("up", -1, 0, false, true);
-    public static final Direction LEFT = new Direction("left", 0, -1, true, false);
-    public static final Direction RIGHT = new Direction("right", 0, 1, true, false);
+public enum Direction {
+    DOWN("down", 1, 0, false, true),
+    UP("up", -1, 0, false, true),
+    LEFT("left", 0, -1, true, false),
+    RIGHT("right", 0, 1, true, false);
 
     final String name;
     final int rowDelta;

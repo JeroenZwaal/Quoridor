@@ -46,6 +46,7 @@ public class Main {
                 }
                 }
 
+
             private void checkMove(Location location, Direction direction, Direction... andThen) {
                 if (!board.hasWall(location, direction)) {
                     final Location next = location.go(direction);

@@ -9,6 +9,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class BoardPanel extends JComponent {
     private static final Color[] PLAYER_COLORS = { Color.RED, Color.BLUE };
@@ -98,9 +99,14 @@ public class BoardPanel extends JComponent {
 
         final Rectangle cell = calculateCell();
 
-        g.setColor(Color.BLACK);
+        final Set<Location> reachable = board.getReachableLocations(board.getCurrentPlayer().getLocation());
         for (int r = 0; r < board.getSize(); ++r) {
             for (int c = 0; c < board.getSize(); ++c) {
+                final Location location = new Location(r, c);
+                final Color color = (location.equals(board.getCurrentPlayer().getLocation())) ? Color.GRAY.darker()
+                        : (board.getCurrentPlayer().winsAt(location) && reachable.contains(location)) ? Color.GRAY.darker()
+                        : Color.BLACK;
+                g.setColor(color);
                 g.fillRect(
                     cell.x + cell.width * c * 7,
                     cell.y + cell.height * r * 7,
