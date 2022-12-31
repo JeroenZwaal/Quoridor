@@ -1,5 +1,6 @@
 package nl.waterjeloen.quoridor;
 
+import java.awt.*;
 import java.util.function.Function;
 
 public class Player {
@@ -44,4 +45,8 @@ public class Player {
     }
 
     public boolean hasWon() { return wins.apply(location); }
+
+    public boolean winsAt(Location location) {
+        return wins.apply(location);
+    }
 }

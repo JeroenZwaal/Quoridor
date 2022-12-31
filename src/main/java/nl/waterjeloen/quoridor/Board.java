@@ -1,6 +1,8 @@
 package nl.waterjeloen.quoridor;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class Board {
     private final int size;
@@ -111,6 +113,28 @@ public class Board {
     private void nextPlayer() {
         currentPlayer = (currentPlayer + 1) % players.size();
     }
+
+    public Set<Location> getReachableLocations(Location location) {
+        Set<Location> result = new HashSet<>();
+        result.add(location);
+        for (Direction direction : Direction.values()) {
+            extend(result, location, direction);
+        }
+        return result;
+    }
+
+    private void extend(Set<Location> result, Location location, Direction direction) {
+        if (!hasWall(location, direction)) {
+            Location next = location.go(direction);
+            if (next.isValid(size) && (!result.contains(next))) {
+                result.add(next);
+                for (Direction d : Direction.values()) {
+                    extend(result, next, d);
+                }
+            }
+        }
+    }
+
 }
 
 
