@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Set;
 
 public class BoardPanel extends JComponent {
+    public static final long serialVersionUID = -1L;
+    
     private static final Color[] PLAYER_COLORS = { Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW };
 
     private final Board board;

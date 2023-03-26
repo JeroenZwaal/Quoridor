@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.Dimension;
 
 public class GUI extends JFrame {
+    public static final long serialVersionUID = -1L;
+    
     private final BoardPanel panel;
 
     public GUI(Board board) {
