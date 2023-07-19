@@ -1,6 +1,8 @@
 package nl.zwaaltjes.quoridor
 
 final case class Location(row: Int, column: Int) {
+  import Location.*
+
   def go(direction: Direction): Location = {
     val newRow = row + direction.rowDelta
     val newColumn = column + direction.columnDelta
@@ -38,5 +40,13 @@ final case class Location(row: Int, column: Int) {
     (column >= 0) && (column < columnCount)
 
   override def toString: String =
-    s"($row,$column)"
+    s"${columnString(column)}${rowString(row)}"
+}
+
+object Location {
+  def rowString(row: Int): String =
+    (row + 1).toString
+
+  def columnString(column: Int): String =
+    ('A' + column).toChar.toString
 }
