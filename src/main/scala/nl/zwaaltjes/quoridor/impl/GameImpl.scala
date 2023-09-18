@@ -171,9 +171,7 @@ private class GameImpl(override val size: Int, override val players: IndexedSeq[
 
   private def jumpMoves(position: Position, direction: Direction, result: Set[Position] = Set.empty): Set[Position] = {
     val next = direction(position)
-    if (!isValidPosition(next)) // TODO: superfluous!
-      result // off the board
-    else if (!isOccupied(next))
+    if (!isOccupied(next))
       result + next // normal move
     else {
       if (!crossesWall(next, direction))

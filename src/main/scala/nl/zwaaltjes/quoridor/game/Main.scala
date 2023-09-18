@@ -4,6 +4,8 @@ import nl.zwaaltjes.quoridor.api.*
 import nl.zwaaltjes.quoridor.impl.QuoridorImpl
 import nl.zwaaltjes.quoridor.game.RichPosition.*
 
+import javax.swing.JOptionPane
+
 object Main {
   def main(args: Array[String]): Unit = {
     val players = if (args.nonEmpty) args.toSeq else Seq("You", "Me", "He", "She")
@@ -33,7 +35,7 @@ object Main {
               System.exit(0)
             }
           case Left(error) =>
-            println(error) // TODO: nice popup
+            JOptionPane.showMessageDialog(gui, error, "Oops", JOptionPane.WARNING_MESSAGE)
         }
       } else {
         val player = game.currentPlayer
