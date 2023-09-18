@@ -1,5 +1,5 @@
 package nl.zwaaltjes.quoridor.api
 
 trait Quoridor {
-  def createGame(players: Seq[String]): Game
+  def createGame(players: Seq[String]): Either[String, Game]
 }

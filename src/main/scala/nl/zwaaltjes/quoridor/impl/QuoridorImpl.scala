@@ -7,22 +7,24 @@ object QuoridorImpl extends Quoridor {
 
   private val size = 9
   private val walls = 20
-  private val inits = Seq(
-    Init(Position(row = 1, column = (size + 1) / 2), _.row == size),
-    Init(Position(row = size, column = (size + 1) / 2), _.row == 1),
-    Init(Position(row = (size + 1) / 2, column = 1), _.column == size),
-    Init(Position(row = (size + 1) / 2, column = size), _.column == 1),
-  )
-
-  override def createGame(playerNames: Seq[String]): Game = {
-    require(playerNames.size >= 2, "Game needs at least 2 players")
-    require(playerNames.size <= 4, "Game needs at most 4 players")
-
-    val wallCount = walls / playerNames.size
-    val players = playerNames.toIndexedSeq.zip(inits).map {
-      case (name, init) =>
-        PlayerImpl(name, init.position, wallCount, init.wins)
-    }
-    new GameImpl(size, players)
+  private val gameInits = {
+    val bottom = Init(Position(row = 1, column = (size + 1) / 2), _.row == size)
+    val top = Init(Position(row = size, column = (size + 1) / 2), _.row == 1)
+    val left = Init(Position(row = (size + 1) / 2, column = 1), _.column == size)
+    val right = Init(Position(row = (size + 1) / 2, column = size), _.column == 1)
+    Map(2 -> Seq(bottom, top), 4 -> Seq(bottom, left, top, right))
   }
+
+  override def createGame(playerNames: Seq[String]): Either[String, Game] =
+    gameInits.get(playerNames.size) match {
+      case Some(inits) =>
+        val wallCount = walls / playerNames.size
+        val players = playerNames.toIndexedSeq.zip(inits).map {
+          case (name, init) =>
+            PlayerImpl(name, init.position, wallCount, init.wins)
+        }
+        Right(new GameImpl(size, players))
+      case None =>
+        Left(s"Game cannot be played with ${playerNames.size} players.")
+    }
 }

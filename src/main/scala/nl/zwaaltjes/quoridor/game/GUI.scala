@@ -16,5 +16,5 @@ class GUI(game: Game) extends JFrame {
   pack()
 
   def showMessage(message: String): Unit =
-    JOptionPane.showMessageDialog(this, message)
+    JOptionPane.showMessageDialog(this, message, "Quoridor", JOptionPane.INFORMATION_MESSAGE)
 }

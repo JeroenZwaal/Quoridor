@@ -10,11 +10,15 @@ object Main {
   def main(args: Array[String]): Unit = {
     val players = if (args.nonEmpty) args.toSeq else Seq("You", "Me", "He", "She")
     val quoridor: Quoridor = QuoridorImpl
-    val game = quoridor.createGame(players)
-    val gui = new GUI(game)
-    gui.panel.addListener(new Listener(game, gui))
-    gui.setVisible(true)
-    gui.repaint()
+    quoridor.createGame(players) match {
+      case Right(game) =>
+        val gui = new GUI(game)
+        gui.panel.addListener(new Listener(game, gui))
+        gui.setVisible(true)
+        gui.repaint()
+      case Left(error) =>
+        println(error)
+    }
   }
 
   private class Listener(game: Game, gui: GUI) extends GamePanel.Listener {
@@ -35,7 +39,7 @@ object Main {
               System.exit(0)
             }
           case Left(error) =>
-            JOptionPane.showMessageDialog(gui, error, "Oops", JOptionPane.WARNING_MESSAGE)
+            gui.showMessage(error)
         }
       } else {
         val player = game.currentPlayer
