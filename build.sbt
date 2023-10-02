@@ -3,7 +3,7 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 val projectSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "nl.zwaaltjes",
   version      := "0.0.1-SNAPSHOT",
-  scalaVersion := "3.2.2",
+  scalaVersion := "3.3.1",
 
   // compiler settings
   javacOptions ++= Seq("-source", "11", "-target", "11"),
@@ -13,7 +13,13 @@ val projectSettings = Defaults.coreDefaultSettings ++ Seq(
 )
 
 val dependencies = Seq(
-  "org.scalatest" %% "scalatest" % "3.2.15" % "test"
+  "com.typesafe.akka" %% "akka-actor-typed" % "2.8.4",
+  "com.typesafe.akka" %% "akka-stream" % "2.8.4",
+  "com.typesafe.akka" %% "akka-http" % "10.5.2",
+  "com.typesafe.akka" %% "akka-http-spray-json" % "10.5.2",
+  "ch.qos.logback" % "logback-classic" % "1.2.12",
+
+  "org.scalatest" %% "scalatest" % "3.2.15" % "test",
 )
 
 lazy val Quoridor = (project in file("."))

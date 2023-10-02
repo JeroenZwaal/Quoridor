@@ -1,0 +1,44 @@
+PUT /users/$email
+- name
+- password
+=>
+OK
+
+
+POST /users/$email/logon
+- basic auth
+=>
+session cookie
+
+
+POST /games/new
+- session cookie
+- email
+
+
+POST /games/$game-id/accept
+- session cookie
+=>
+
+
+GET /games/$game-id
+- session cookie
+=>
+players
+current
+winner
+history
+moves
+
+
+POST /games/$game-id/move
+- move
+- session cookie
+=>
+players
+current
+winner
+history
+moves
+
+
