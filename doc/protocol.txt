@@ -1,15 +1,60 @@
+' any request
+CMD /path
+- valid session cookie/header
+=>
+200 OK
+
+' any request
+CMD /path
+- basic authentication
+=>
+200 OK
+- session cookie/header
+
+' any request
+CMD /path
+- invalid session cookie/header
+=>
+401 Unauthorized
+- WWW-Authenticate:
+
+'any request
+CMD /path
+=>
+401 Unauthorized
+- WWW-Authenticate:
+
+
+
+' show user
+GET /users/$email
+- session cookie/header
+=>
+OK
+- name
+- statistics
+
+
+' create or update user
 PUT /users/$email
+- (session cookie/header)
 - name
 - password
 =>
 OK
 
 
-POST /users/$email/logon
+' create session
+POST /users/$email/login
 - basic auth
 =>
-session cookie
+200 OK
+- session cookie/header
 
+
+' list games
+GET /games/
+- session cookie/header
 
 POST /games/new
 - session cookie

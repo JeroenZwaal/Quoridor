@@ -1,8 +1,8 @@
 package nl.zwaaltjes.quoridor.server
 
-import akka.actor.typed.ActorRef
-import akka.actor.typed.scaladsl.Behaviors
 import nl.zwaaltjes.quoridor.api.{Game, Quoridor}
+import org.apache.pekko.actor.typed.ActorRef
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import spray.json.DefaultJsonProtocol.*
 import spray.json.{RootJsonFormat, RootJsonWriter}
 

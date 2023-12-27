@@ -13,10 +13,11 @@ val projectSettings = Defaults.coreDefaultSettings ++ Seq(
 )
 
 val dependencies = Seq(
-  "com.typesafe.akka" %% "akka-actor-typed" % "2.8.4",
-  "com.typesafe.akka" %% "akka-stream" % "2.8.4",
-  "com.typesafe.akka" %% "akka-http" % "10.5.2",
-  "com.typesafe.akka" %% "akka-http-spray-json" % "10.5.2",
+  "org.apache.pekko" %% "pekko-actor-typed" % "1.0.1",
+  "org.apache.pekko" %% "pekko-stream" % "1.0.1",
+  "org.apache.pekko" %% "pekko-http" % "1.0.0",
+  "org.apache.pekko" %% "pekko-http-spray-json" % "1.0.0",
+  // "com.github.pjfanning" %% "pekko-http-session-core" % "0.8.0",
   "ch.qos.logback" % "logback-classic" % "1.2.12",
 
   "org.scalatest" %% "scalatest" % "3.2.15" % "test",
