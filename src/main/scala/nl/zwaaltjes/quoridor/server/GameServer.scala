@@ -11,15 +11,15 @@ import scala.reflect.ClassTag
 
 object GameServer {
   sealed trait Command
-  final case class NewGame(players: Seq[String], replyTo: ActorRef[Created | Error]) extends Command
+  final case class NewGame(players: Seq[UserId], replyTo: ActorRef[Created | Error]) extends Command
 
-  final case class Created(gameId: String)
+  final case class Created(gameId: GameId)
   final case class Error(message: String)
 
-  implicit val errorFormat: RootJsonFormat[GameServer.Error] = jsonFormat1(GameServer.Error.apply)
-  implicit val createdFormat: RootJsonFormat[GameServer.Created] = jsonFormat1(GameServer.Created.apply)
+  given errorFormat: RootJsonFormat[GameServer.Error] = jsonFormat1(GameServer.Error.apply)
+  given RootJsonFormat[GameServer.Created] = jsonFormat1(GameServer.Created.apply)
 
-  implicit def someWriter[A: ClassTag](implicit aWriter: RootJsonFormat[A]): RootJsonWriter[A | GameServer.Error] = {
+  given someWriter[A: ClassTag](using aWriter: RootJsonFormat[A]): RootJsonWriter[A | GameServer.Error] = {
     case e: GameServer.Error => errorFormat.write(e)
     case a: A => aWriter.write(a)
   }
@@ -30,13 +30,13 @@ object GameServer {
 
 class GameServer private(quoridor: Quoridor) {
 
-  private def apply(games: Map[UUID, Game]): Behaviors.Receive[GameServer.Command] = Behaviors.receive {
+  private def apply(games: Map[GameId, Game]): Behaviors.Receive[GameServer.Command] = Behaviors.receive {
     case (ctx, GameServer.NewGame(players, replyTo)) =>
       ctx.log.info(s"Starting new game for players ${players.mkString(", ")}")
-      quoridor.createGame(players) match {
+      quoridor.createGame(players.map(_.str)) match {
         case Right(newGame) =>
-          val id = UUID.randomUUID()
-          replyTo ! GameServer.Created(id.toString)
+          val id = GameId.create()
+          replyTo ! GameServer.Created(id)
           apply(games + (id -> newGame))
         case Left(message) =>
           replyTo ! GameServer.Error(message)

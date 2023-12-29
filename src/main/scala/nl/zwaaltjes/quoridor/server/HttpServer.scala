@@ -8,11 +8,11 @@ import org.apache.pekko.actor.typed.{ActorRef, ActorSystem}
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.Http.ServerBinding
 import org.apache.pekko.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, HttpChallenges, RawHeader}
-import org.apache.pekko.http.scaladsl.model.{HttpHeader, StatusCodes}
+import org.apache.pekko.http.scaladsl.server.*
 import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.directives.Credentials
-import org.apache.pekko.http.scaladsl.server.*
 import org.apache.pekko.util.Timeout
 import spray.json.DefaultJsonProtocol.*
 import spray.json.RootJsonFormat
@@ -26,24 +26,17 @@ object HttpServer {
     new HttpServer
 
   private sealed trait Command
-
   private final case class Bound(binding: ServerBinding) extends Command
-
   private final case class GetVersion(replyTo: ActorRef[Version]) extends Command
-
   private final case class GameRequest(command: GameServer.Command) extends Command
-
   private final case class UserRequest(command: UserServer.Command) extends Command
-
   private case object Unbound extends Command
-
   private case object Shutdown extends Command
 
   private final case class Version(version: String)
 
-  private implicit val versionFormat: RootJsonFormat[HttpServer.Version] = jsonFormat1(Version.apply)
-
-  private implicit val timeout: Timeout = 5.seconds
+  private given RootJsonFormat[HttpServer.Version] = jsonFormat1(Version.apply)
+  private given timeout: Timeout = 5.seconds
 
   private def binding: Behaviors.Receive[Command] = Behaviors.receivePartial { case (ctx, Bound(binding)) =>
     ctx.log.info(
@@ -86,11 +79,10 @@ object HttpServer {
 }
 
 class HttpServer {
-  import GameServer.*
-  import HttpServer.*
+  import HttpServer.{timeout, *}
 
-  private implicit val system: ActorSystem[HttpServer.Command] = ActorSystem(HttpServer.binding, "quoridor")
-  private implicit val executionContext: ExecutionContext = system.executionContext
+  private given system: ActorSystem[HttpServer.Command] = ActorSystem(HttpServer.binding, "quoridor")
+  private given ExecutionContext = system.executionContext
 
   private val httpServer: ActorRef[HttpServer.Command] = system
   private val authenticator: Credentials => Option[String] = {
@@ -114,13 +106,10 @@ class HttpServer {
   private val missingCredentials =
     AuthenticationFailedRejection(AuthenticationFailedRejection.CredentialsMissing, HttpChallenges.basic(Realm))
 
-  private def sessionHeader(sessionId: String): HttpHeader =
-    RawHeader(SessionHeader, sessionId)
+  private def setSessionHeader(sessionId: SessionId): Directive0 =
+    respondWithHeader(RawHeader(SessionHeader, sessionId.str))
 
-  private def setSessionHeader(sessionId: String): Directive0 =
-    respondWithHeader(sessionHeader(sessionId))
-
-  private def validate(sessionId: String): Directive1[String] =
+  private def validate(sessionId: SessionId): Directive1[UserId] =
     userRequest(UserServer.Validate(sessionId, _)) {
       case UserServer.UserData(email, _) =>
         provide(email)
@@ -128,47 +117,47 @@ class HttpServer {
         reject(invalidCredentials)
     }
 
-  private def authenticate(email: String, password: String): Directive1[String] =
-    userRequest(UserServer.Authenticate(email, password, _)) {
+  private def authenticate(userId: UserId, password: Password): Directive1[UserId] =
+    userRequest(UserServer.Authenticate(userId, password, _)) {
       case UserServer.OK(Some(sessionId)) =>
         setSessionHeader(sessionId).tflatMap { _ =>
-          provide(email)
+          provide(userId)
         }
       case _ =>
         reject(invalidCredentials)
     }
 
-  private val sessionHeader: Directive1[Option[String]] =
+  private val sessionHeader: Directive1[Option[UserId]] =
     optionalHeaderValueByName(SessionHeader).flatMap {
-      case Some(sessionId) =>
-        validate(sessionId).map(Option.apply)
+      case Some(session) =>
+        validate(SessionId(session)).map(Option.apply)
       case None =>
         provide(None)
     }
 
-  private val sessionCookie: Directive1[Option[String]] =
+  private val sessionCookie: Directive1[Option[UserId]] =
     optionalCookie(SessionCookie).flatMap {
       case Some(cookie) =>
-        validate(cookie.value).map(Option.apply)
+        validate(SessionId(cookie.value)).map(Option.apply)
       case None =>
         provide(None)
     }
 
-  private val basicAuthentication: Directive1[Option[String]] =
+  private val basicAuthentication: Directive1[Option[UserId]] =
     extractCredentials.flatMap {
-      case Some(BasicHttpCredentials(email, password)) =>
-        authenticate(email, password).map(Option.apply)
+      case Some(BasicHttpCredentials(userId, Password(password))) =>
+        authenticate(UserId(userId), password).map(Option.apply)
       case _ =>
         provide(None)
     }
 
-  private val optionalAuthenticatedUser: Directive1[Option[String]] =
+  private val optionalAuthenticatedUser: Directive1[Option[UserId]] =
     sessionHeader | sessionCookie | basicAuthentication
 
-  private val authenticatedUser: Directive1[String] =
+  private val authenticatedUser: Directive1[UserId] =
     optionalAuthenticatedUser.flatMap {
-      case Some(email) =>
-        provide(email)
+      case Some(userId) =>
+        provide(userId)
       case None =>
         reject(missingCredentials)
     }
@@ -196,23 +185,23 @@ class HttpServer {
     },
     pathPrefix("users") {
       concat(
-        pathPrefix(Segment) { email =>
+        pathPrefix(UserId.Segment) { userId =>
           pathEnd {
             concat(
               get {
                 authenticatedUser { _ =>
-                  onUserRequest(UserServer.GetUser(email, _)) {
+                  onUserRequest(UserServer.GetUser(userId, _)) {
                     case UserServer.UserData(_, name) =>
-                      complete(Json.UserData(email = email, name = name))
+                      complete(Json.UserData(userId = userId, name = name))
                     case error: UserServer.UnknownUser =>
                       complete(StatusCodes.NotFound, error)
                   }
                 }
               },
               put {
-                entity(as[Json.CreateUser]) { user =>
-                  optionalAuthenticatedUser { authenticatedEmail =>
-                    onUserRequest(UserServer.UpdateUser(email, user.name, user.password, authenticatedEmail, _)) {
+                optionalAuthenticatedUser { authenticatedUserId =>
+                  entity(as[Json.CreateUser]) { user =>
+                    onUserRequest(UserServer.UpdateUser(userId, user.email, user.name, user.password, authenticatedUserId, _)) {
                       case ok @ UserServer.OK(Some(sessionId)) =>
                         setSessionHeader(sessionId) {
                           complete(ok)
@@ -240,44 +229,55 @@ class HttpServer {
           }
         }
       )
+    },
+    pathPrefix("games") {
+      concat(
+        pathEnd {
+          get {
+            authenticatedUser { userId =>
+              complete(StatusCodes.NotImplemented) // TODO
+            }
+          }
+        },
+        pathPrefix("invite") {
+          path(Segment) { invitee =>
+            post {
+              authenticatedUser { userId =>
+                complete(httpServer.ask[GameServer.Created | GameServer.Error] { replyTo =>
+                  HttpServer.GameRequest(GameServer.NewGame(Seq(userId, UserId(invitee)), replyTo))
+                })
+              }
+            }
+          }
+        },
+        pathPrefix(GameId.Segment) { gameId =>
+          authenticatedUser { userId =>
+            concat(
+              pathEnd {
+                get {
+                  complete(StatusCodes.NotImplemented) // TODO
+                }
+              },
+              path("accept") {
+                post {
+                  complete(StatusCodes.NotImplemented) // TODO
+                }
+              },
+              path("reject") {
+                post {
+                  complete(StatusCodes.NotImplemented) // TODO
+                }
+              },
+              path("move") {
+                post {
+                  complete(StatusCodes.NotImplemented) // TODO
+                }
+              }
+            )
+          }
+        }
+      )
     }
-//    pathPrefix("games") {
-//      concat(
-//        path("new") {
-//          post {
-//            formFields("player1", "player2") { (player1, player2) =>
-//              complete(httpServer.ask[GameServer.Created | GameServer.Error] { replyTo =>
-//                HttpServer.GameRequest(GameServer.NewGame(Seq(player1, player2), replyTo))
-//              })
-//            }
-//          }
-//        },
-//        pathPrefix(IntNumber) { gameId =>
-//          concat(
-//            pathEnd {
-//              get {
-//                complete(StatusCodes.NotImplemented) // TODO
-//              }
-//            },
-//            path("accept") {
-//              post {
-//                complete(StatusCodes.NotImplemented) // TODO
-//              }
-//            },
-//            path("reject") {
-//              post {
-//                complete(StatusCodes.NotImplemented) // TODO
-//              }
-//            },
-//            path("move") {
-//              post {
-//                complete(StatusCodes.NotImplemented) // TODO
-//              }
-//            }
-//          )
-//        }
-//      )
-//    }
   )
 
   Http().newServerAt("localhost", 8888).bind(route).foreach(binding => httpServer ! HttpServer.Bound(binding))

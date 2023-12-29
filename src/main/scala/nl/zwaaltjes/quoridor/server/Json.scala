@@ -1,24 +1,25 @@
 package nl.zwaaltjes.quoridor.server
 
 import spray.json.DefaultJsonProtocol.*
-import spray.json.RootJsonFormat
+import spray.json.{JsString, JsValue, JsonFormat, RootJsonFormat}
+
+import java.util.UUID
 
 object Json {
-  final case class Login(email: String, password: String)
+  final case class CreateUser(name: String, email: Email, password: Password)
 
-  final case class CreateUser(name: String, password: String)
-
-  final case class UserData(email: String, name: String)
-
-  object Login {
-    implicit val jsonFormat: RootJsonFormat[Login] = jsonFormat2(Login.apply)
-  }
+  final case class UserData(userId: UserId, name: String)
 
   object CreateUser {
-    implicit val jsonFormat: RootJsonFormat[CreateUser] = jsonFormat2(CreateUser.apply)
+    given RootJsonFormat[CreateUser] = jsonFormat3(CreateUser.apply)
   }
 
   object UserData {
-    implicit val jsonFormat: RootJsonFormat[UserData] = jsonFormat2(UserData.apply)
+    given RootJsonFormat[UserData] = jsonFormat2(UserData.apply)
+  }
+  
+  given uuidFormat: JsonFormat[UUID] = new RootJsonFormat[UUID] {
+    override def read(json: JsValue): UUID = UUID.fromString(json.convertTo[String])
+    override def write(uuid: UUID): JsValue = JsString(uuid.toString)
   }
 }

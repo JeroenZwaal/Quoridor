@@ -30,10 +30,9 @@ CMD /path
 GET /users/$email
 - session cookie/header
 =>
-OK
+200 OK
 - name
 - statistics
-
 
 ' create or update user
 PUT /users/$email
@@ -41,49 +40,46 @@ PUT /users/$email
 - name
 - password
 =>
-OK
+200 OK
 
-
-' create session
-POST /users/$email/login
-- basic auth
+' dump user data
+GET /users
 =>
 200 OK
-- session cookie/header
+
 
 
 ' list games
 GET /games/
 - session cookie/header
-
-POST /games/new
-- session cookie
-- email
-
-
-POST /games/$game-id/accept
-- session cookie
 =>
+200 OK
+
+POST /games/invite/$email
+- session cookie/header
+=>
+201 Created
+- url
+
+POST /games/$game-id/{accept|reject}
+- session cookie/header
+=>
+200 OK
+- game
 
 
 GET /games/$game-id
-- session cookie
+- session cookie/header
 =>
-players
-current
-winner
-history
-moves
+200 OK
+- game
 
 
 POST /games/$game-id/move
+- session cookie/header
 - move
-- session cookie
 =>
-players
-current
-winner
-history
-moves
+200 OK
+- game
 
 
