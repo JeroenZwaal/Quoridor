@@ -3,9 +3,6 @@ package nl.zwaaltjes.quoridor.server
 import org.apache.pekko.actor.typed.ActorRef
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import spray.json.DefaultJsonProtocol.*
-import spray.json.RootJsonFormat
-
-import scala.reflect.ClassTag
 
 object UserServer {
   sealed trait Command
@@ -23,7 +20,7 @@ object UserServer {
   final case class GetDump(replyTo: ActorRef[Dump]) extends Command
 
   sealed trait Response
-  final case class UserData(userId: UserId, name: String) extends Response
+  final case class UserData(userId: UserId, name: String, email: Email) extends Response
   final case class OK(sessionId: Option[SessionId]) extends Response
   final case class Dump(data: String) extends Response
 
@@ -32,11 +29,6 @@ object UserServer {
   final case class UserExists(message: String) extends Error
   final case class UnknownUser(message: String) extends Error
   final case class WrongUser(message: String) extends Error
-
-  given RootJsonFormat[OK] = jsonFormat1(OK.apply)
-  given RootJsonFormat[UserExists] = jsonFormat1(UserExists.apply)
-  given RootJsonFormat[UnknownUser] = jsonFormat1(UnknownUser.apply)
-  given RootJsonFormat[WrongUser] = jsonFormat1(WrongUser.apply)
 
   def apply(): Behaviors.Receive[Command] =
     apply(Map.empty, Map.empty)
@@ -63,7 +55,7 @@ object UserServer {
     case (_, UserServer.Validate(sessionId, replyTo)) =>
       sessions.get(sessionId) match {
         case Some(user) =>
-          replyTo ! UserServer.UserData(user.id, user.name)
+          replyTo ! UserServer.UserData(user.id, user.name, user.email)
         case _ =>
           replyTo ! UserServer.Unauthorized("Session is invalid")
       }
@@ -71,7 +63,7 @@ object UserServer {
 
     case (_, UserServer.GetUser(userId, replyTo)) =>
       users.get(userId) match {
-        case Some(user) => replyTo ! UserData(userId, user.name)
+        case Some(user) => replyTo ! UserData(userId, user.name, user.email)
         case None => replyTo ! UnknownUser(s"User does not exist for $userId")
       }
       Behaviors.same

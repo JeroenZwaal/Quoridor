@@ -17,4 +17,8 @@ object GameId {
 
   def apply(gameId: UUID): GameId =
     gameId
+    
+  extension (gameId: GameId) {
+    def str: String = gameId.toString
+  }
 }
