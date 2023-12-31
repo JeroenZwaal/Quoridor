@@ -13,4 +13,10 @@ object Position {
 
   def columnString(column: Int): String =
     ('A' + column - 1).toChar.toString
+    
+  def fromString(value: String): Position =
+    value.headOption match {
+      case Some(column) => Position(column - 'A' + 1, value.drop(1).toInt)
+      case _ => throw new Exception(s"Invalid position: $value")
+    }
 }

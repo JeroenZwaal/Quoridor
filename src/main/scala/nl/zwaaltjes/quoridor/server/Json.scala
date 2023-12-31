@@ -1,7 +1,8 @@
 package nl.zwaaltjes.quoridor.server
 
+import nl.zwaaltjes.quoridor.api.{HorizontalWall, PlayerMove, Position, VerticalWall}
 import org.apache.pekko.http.scaladsl.marshalling.{Marshaller, ToEntityMarshaller}
-import org.apache.pekko.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpCharsets, MediaType, MediaTypes}
+import org.apache.pekko.http.scaladsl.model.*
 import org.apache.pekko.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import spray.json.*
 import spray.json.DefaultJsonProtocol.*
@@ -38,7 +39,45 @@ object Json {
   object UserData {
     private given RootJsonFormat[UserData] = jsonFormat3(UserData.apply)
 
-    given unmarshaller: ToEntityMarshaller[Envelope[UserData]] = jsonMarshaller(contentType("user-data", "v0"))
+    given marshaller: ToEntityMarshaller[Envelope[UserData]] = jsonMarshaller(contentType("user-data", "v0"))
+  }
+
+  final case class Games(gameIds: Seq[GameId])
+  object Games {
+    private given RootJsonFormat[Games] = jsonFormat1(Games.apply)
+
+    given marshaller: ToEntityMarshaller[Envelope[Games]] = jsonMarshaller(contentType("game-list", "v0"))
+  }
+
+  type Move = nl.zwaaltjes.quoridor.api.Move
+  object Move {
+    private given RootJsonFormat[Move] = new RootJsonFormat[Move] {
+      private val TypeKey = "type"
+      private val PositionKey = "position"
+      private val PlayerMoveType = "PlayerMove"
+      private val HorizontalWallType = "HorizontalWall"
+      private val VerticalWallType = "VerticalWall"
+      
+      private def moveObject(moveType: String, position: Position): JsValue =
+        JsObject(TypeKey -> JsString(moveType), PositionKey -> JsString(position.toString))
+        
+      override def write(move: Move): JsValue =
+        move match {
+          case PlayerMove(position) => moveObject(PlayerMoveType, position)
+          case HorizontalWall(position) => moveObject(HorizontalWallType, position)
+          case VerticalWall(position) => moveObject(VerticalWallType, position)
+        }
+        
+      override def read(json: JsValue): Move =
+        json.asJsObject.getFields(TypeKey, PositionKey) match {
+          case Seq(JsString(PlayerMoveType), JsString(position)) => PlayerMove(Position.fromString(position))
+          case Seq(JsString(HorizontalWallType), JsString(position)) => HorizontalWall(Position.fromString(position))
+          case Seq(JsString(VerticalWallType), JsString(position)) => VerticalWall(Position.fromString(position))
+          case _ => deserializationError(s"Invalid move value: $json")
+        }
+    }
+
+    given unmarshaller: FromEntityUnmarshaller[Move] = jsonUnmarshaller(contentType("move", "v0"))
   }
 
   given uuidFormat: JsonFormat[UUID] = new RootJsonFormat[UUID] {

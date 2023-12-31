@@ -10,18 +10,23 @@ object UserServer {
   final case class Validate(sessionId: SessionId, replyTo: ActorRef[UserData | Error]) extends Command
   final case class GetUser(userId: UserId, replyTo: ActorRef[UserData | Error]) extends Command
   final case class UpdateUser(
-    userId: UserId,
-    email: Email,
-    name: String,
-    password: Password,
-    authenticatedUserId: Option[UserId],
-    replyTo: ActorRef[OK | Error]
+      userId: UserId,
+      email: Email,
+      name: String,
+      password: Password,
+      authenticatedUserId: Option[UserId],
+      replyTo: ActorRef[OK | Error],
   ) extends Command
+  final case class Invite(userId: UserId, gameId: GameId, message: String) extends Command
+  final case class ListGames(userId: UserId, replyTo: ActorRef[Games]) extends Command
+  final case class AddGame(userId: UserId, gameId: GameId) extends Command
+  final case class DeleteGame(userId: UserId, gameId: GameId) extends Command
   final case class GetDump(replyTo: ActorRef[Dump]) extends Command
 
   sealed trait Response
   final case class UserData(userId: UserId, name: String, email: Email) extends Response
   final case class OK(sessionId: Option[SessionId]) extends Response
+  final case class Games(gameIds: Seq[GameId])
   final case class Dump(data: String) extends Response
 
   sealed trait Error extends Response
@@ -33,35 +38,40 @@ object UserServer {
   def apply(): Behaviors.Receive[Command] =
     apply(Map.empty, Map.empty)
 
-  private case class User(id: UserId, email: Email, name: String, password: Password, sessionId: SessionId) {
+  private case class User(id: UserId, email: Email, name: String, password: Password, sessionId: SessionId, gameIds: List[GameId]) {
+    def withGame(gameId: GameId): User = copy(gameIds = gameId :: gameIds)
+    def withoutGame(gameId: GameId): User = copy(gameIds = gameIds.filter(_ != gameId))
     override def toString: String =
       s"$name ($email / $password); $sessionId"
   }
 
-  private def apply(users: Map[UserId, User], sessions: Map[SessionId, User]): Behaviors.Receive[UserServer.Command] = Behaviors.receive {
-    case (_, UserServer.Authenticate(userId, password, replyTo)) =>
+  private def apply(users: Map[UserId, User], sessions: Map[SessionId, User]): Behaviors.Receive[Command] = Behaviors.receive {
+    // create session from credentials
+    case (_, Authenticate(userId, password, replyTo)) =>
       users.get(userId) match {
         case Some(user) if user.password == password =>
           val sessionId = SessionId.create()
-          replyTo ! UserServer.OK(Some(sessionId))
+          replyTo ! OK(Some(sessionId))
           val updatedUser = user.copy(sessionId = sessionId)
           val updatedSessions = sessions - user.sessionId
           apply(users = users + (userId -> updatedUser), sessions = sessions + (sessionId -> updatedUser) - user.sessionId)
         case _ =>
-          replyTo ! UserServer.Unauthorized("Email/password combination is invalid")
+          replyTo ! Unauthorized("Email/password combination is invalid")
           Behaviors.same
       }
 
-    case (_, UserServer.Validate(sessionId, replyTo)) =>
+    // get user details for session
+    case (_, Validate(sessionId, replyTo)) =>
       sessions.get(sessionId) match {
         case Some(user) =>
-          replyTo ! UserServer.UserData(user.id, user.name, user.email)
+          replyTo ! UserData(user.id, user.name, user.email)
         case _ =>
-          replyTo ! UserServer.Unauthorized("Session is invalid")
+          replyTo ! Unauthorized("Session is invalid")
       }
       Behaviors.same
 
-    case (_, UserServer.GetUser(userId, replyTo)) =>
+    // get user details
+    case (_, GetUser(userId, replyTo)) =>
       users.get(userId) match {
         case Some(user) => replyTo ! UserData(userId, user.name, user.email)
         case None => replyTo ! UnknownUser(s"User does not exist for $userId")
@@ -69,38 +79,85 @@ object UserServer {
       Behaviors.same
 
     // create new user
-    case (_, UserServer.UpdateUser(userId, email, name, password, None, replyTo)) if !users.contains(userId) =>
+    case (_, UpdateUser(userId, email, name, password, None, replyTo)) if !users.contains(userId) =>
       val sessionId = SessionId.create()
-      replyTo ! UserServer.OK(Some(sessionId))
-      val user = User(userId, email, name, password, sessionId)
+      replyTo ! OK(Some(sessionId))
+      val user = User(userId, email, name, password, sessionId, Nil)
       apply(users = users + (userId -> user), sessions = sessions + (sessionId -> user))
 
     // (re)create existing user
-    case (_, UserServer.UpdateUser(userId, _, _, _, None, replyTo)) =>
-      replyTo ! UserServer.UserExists(s"User already exists for $userId")
+    case (_, UpdateUser(userId, _, _, _, None, replyTo)) =>
+      replyTo ! UserExists(s"User already exists for $userId")
       Behaviors.same
 
     // update existing user by owner
-    case (_, UserServer.UpdateUser(userId, email, name, password, authenticatedUserId, replyTo)) if authenticatedUserId == userId =>
+    case (_, UpdateUser(userId, email, name, password, authenticatedUserId, replyTo)) if authenticatedUserId == userId =>
       users.get(userId) match {
         case Some(user) =>
-          replyTo ! UserServer.OK(None)
+          replyTo ! OK(None)
           val updatedUser = user.copy(email = email, name = name, password = password)
           apply(users = users + (userId -> updatedUser), sessions = sessions + (user.sessionId -> updatedUser))
         case None =>
-          replyTo ! UserServer.UnknownUser(s"User does not exist for $userId")
+          replyTo ! UnknownUser(s"User does not exist for $userId")
           Behaviors.same
       }
 
     // update other user
-    case (_, UserServer.UpdateUser(userId, _,  _, _, _, replyTo)) =>
-      replyTo ! UserServer.WrongUser(s"Cannot change user for $userId")
+    case (_, UpdateUser(userId, _, _, _, _, replyTo)) =>
+      replyTo ! WrongUser(s"Cannot change user for $userId")
       Behaviors.same
 
-    case (_, UserServer.GetDump(replyTo)) =>
-      val userData = users.map { case (userId, user) => s"$userId: $user" }.mkString("Users:\n- ", "\n- ", "\n")
-      val sessionData = sessions.map { case (sessionId, user) => s"$sessionId: $user" }.mkString("Sessions:\n- ", "\n- ", "\n")
-      replyTo ! UserServer.Dump(userData + sessionData)
+    // invite user to game
+    case (ctx, Invite(userId, gameId, message)) =>
+      users.get(userId) match {
+        case Some(user) =>
+          ctx.log.info(s"Sending invitation to $userId (${user.email}) with message '$message'.")
+          // TODO: send email to user.email
+          val updatedUser = user.withGame(gameId)
+          apply(users = users + (userId -> updatedUser), sessions)
+        case None =>
+          ctx.log.warn(s"Not sending invitation to non-existing user $userId")
+          Behaviors.same
+      }
+
+    // list all games for user
+    case (_, ListGames(userId, replyTo)) =>
+      users.get(userId) match {
+        case Some(user) =>
+          replyTo ! Games(user.gameIds)
+          Behaviors.same
+        case None =>
+          replyTo ! Games(Nil)
+          Behaviors.same
+      }
+
+    // add game for user
+    case (_, AddGame(userId, gameId)) =>
+      users.get(userId) match {
+        case Some(user) =>
+          val updatedUser = user.withGame(gameId)
+          apply(users = users + (userId -> updatedUser), sessions)
+        case None =>
+          Behaviors.same
+      }
+
+    // delete game from user
+    case (_, DeleteGame(userId, gameId)) =>
+      users.get(userId) match {
+        case Some(user) =>
+          val updatedUser = user.withoutGame(gameId)
+          apply(users = users + (userId -> updatedUser), sessions)
+        case None =>
+          Behaviors.same
+      }
+
+    // dump all user details
+    case (_, GetDump(replyTo)) =>
+      def list(heading: String, list: Iterable[String]): String = list.mkString(s"$heading:\n- ", "\n- ", "\n")
+
+      val sessionData = list("Sessions", sessions.map { case (sessionId, user) => s"$sessionId: $user" })
+      val userData = list("Users", users.map { case (userId, user) => s"$userId: $user${user.gameIds.mkString(" [", ", ", "]")}" })
+      replyTo ! Dump(userData + sessionData)
       Behaviors.same
   }
 }

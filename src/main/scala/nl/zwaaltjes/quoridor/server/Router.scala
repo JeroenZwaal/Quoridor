@@ -12,7 +12,6 @@ import org.apache.pekko.util.Timeout
 
 import scala.concurrent.duration.DurationInt
 
-// TODO: game protocol
 object Router {
   private val SessionCookie = "QuoridorSession"
   private val SessionHeader = "XQuoridorSession"
@@ -21,9 +20,12 @@ object Router {
   private val InvalidCredentials = AuthenticationFailedRejection(CredentialsRejected, HttpChallenges.basic(Realm))
   private val MissingCredentials = AuthenticationFailedRejection(CredentialsMissing, HttpChallenges.basic(Realm))
 
-  private val adminAuthenticator: Credentials => Option[String] = {
-    case p @ Credentials.Provided("wortel") if p.verify("p4$sw0rd") => Some(p.identifier)
-    case _ => None
+  private val authenticatedAdmin: Directive0 = {
+    val directive = authenticateBasic(realm = Realm, {
+      case p @ Credentials.Provided("wortel") if p.verify("p4$sw0rd") => Some(p.identifier)
+      case _ => None
+    })
+    directive.map(_ => ())
   }
 
   private val rejectionHandler: RejectionHandler = RejectionHandler
@@ -91,11 +93,6 @@ class Router(
     handleExceptions(exceptionHandler) {
       handleRejections(rejectionHandler) {
         concat(
-          pathEndOrSingleSlash {
-            get {
-              getFromResource("www/welcome.html")
-            }
-          },
           path("version") {
             get {
               onSuccess(httpServer.ask(HttpServer.GetVersion.apply)) {
@@ -106,17 +103,30 @@ class Router(
           },
           path("shutdown") {
             post {
-              authenticateBasic(realm = Realm, adminAuthenticator) { _ =>
+              authenticatedAdmin {
                 httpServer ! HttpServer.Shutdown
                 complete(StatusCodes.Accepted, Json.OK.empty)
               }
             }
           },
           pathPrefix("users") {
-            userRoute(Uri("users").resolvedAgainst(base))
+            userRoute(Uri("users/").resolvedAgainst(base))
           },
           pathPrefix("games") {
-            gameRoute(Uri("games").resolvedAgainst(base))
+            gameRoute(Uri("games/").resolvedAgainst(base))
+          },
+          pathEndOrSingleSlash {
+            get {
+              authenticatedAdmin {
+                userRequest(UserServer.GetDump.apply) {
+                  case UserServer.Dump(userData) =>
+                    gameRequest(GameServer.GetDump.apply) {
+                      case GameServer.Dump(gameData) =>
+                        complete(StatusCodes.OK, s"$userData$gameData")
+                    }
+                }
+              }
+            }
           },
         )
       }
@@ -143,7 +153,7 @@ class Router(
                   userRequest(UserServer.UpdateUser(userId, user.email, user.name, user.password, authenticatedUserId, _)) {
                     case ok @ UserServer.OK(Some(sessionId)) =>
                       setSessionHeader(sessionId) {
-                        val uri = Uri(s"$userId").resolvedAgainst(base)
+                        val uri = Uri(userId.str).resolvedAgainst(base)
                         complete(StatusCodes.Created, Seq(Location(uri)), Json.OK.empty)
                       }
                     case ok @ UserServer.OK(None) =>
@@ -161,14 +171,6 @@ class Router(
           )
         }
       },
-      pathEnd {
-        get {
-          userRequest(UserServer.GetDump.apply) {
-            case UserServer.Dump(data) =>
-              complete(StatusCodes.OK, data)
-          }
-        }
-      },
     )
 
   private def gameRoute(base: Uri): Route =
@@ -176,7 +178,10 @@ class Router(
       pathEnd {
         get {
           authenticatedUser { userId =>
-            complete(StatusCodes.NotImplemented) // TODO
+            userRequest(UserServer.ListGames(userId, _)) {
+              case UserServer.Games(gameIds) =>
+                complete(StatusCodes.OK, Json.OK(Json.Games(gameIds)))
+            }
           }
         }
       },
@@ -184,9 +189,9 @@ class Router(
         path(Segment) { invitee =>
           post {
             authenticatedUser { userId =>
-              gameRequest(GameServer.NewGame(Seq(userId, UserId(invitee)), _)) {
+              gameRequest(GameServer.NewGame(userId, Seq(UserId(invitee)), _)) {
                 case GameServer.Created(gameId) =>
-                  val uri = Uri(s"$gameId").resolvedAgainst(base)
+                  val uri = Uri(gameId.str).resolvedAgainst(base)
                   complete(StatusCodes.Created, Seq(Location(uri)), Json.OK.empty)
                 case GameServer.Error(message) =>
                   complete(StatusCodes.BadRequest, Json.Error(message))
@@ -199,23 +204,28 @@ class Router(
         authenticatedUser { userId =>
           concat(
             pathEnd {
-              get {
-                complete(StatusCodes.NotImplemented) // TODO
-              }
+              concat(
+                get {
+                  controllerRequest(gameId, GameController.GetStatus.apply)
+                },
+              )
             },
             path("accept") {
               post {
-                complete(StatusCodes.NotImplemented) // TODO
+                controllerRequest(gameId, GameController.Accept(userId, _))
               }
             },
             path("reject") {
               post {
-                complete(StatusCodes.NotImplemented) // TODO
+                controllerRequest(gameId, GameController.Reject(userId, _))
               }
             },
             path("move") {
               post {
-                complete(StatusCodes.NotImplemented) // TODO
+                import Json.Move.unmarshaller
+                entity(as[Json.Move]) { move =>
+                  controllerRequest(gameId, GameController.Play(userId, move, _))
+                }
               }
             },
           )
@@ -228,6 +238,19 @@ class Router(
 
   private def gameRequest[A](create: ActorRef[A] => GameServer.Command): Directive1[A] =
     onSuccess(gameServer.ask(create))
+
+  private def controllerRequest[A](gameId: GameId, create: ActorRef[A] => GameController.Command): Route =
+    gameRequest(GameServer.FindGame(gameId, _)) {
+      case GameServer.Controller(controller) =>
+        onSuccess(controller.ask(create)) {
+          case GameController.OK(_) =>
+            complete(StatusCodes.OK, Json.OK.empty)
+          case GameController.Error(message) =>
+            complete(StatusCodes.BadRequest, Json.Error(message))
+        }
+      case GameServer.Error(message) =>
+        complete(StatusCodes.BadRequest, Json.Error(message))
+    }
 
   private def authenticatedUser: Directive1[UserId] =
     sessionHeader | sessionCookie | basicAuthentication

@@ -30,7 +30,7 @@ object HttpServer {
       import system.executionContext
 
       val userServer = ctx.spawn(UserServer(), "userServer")
-      val gameServer = ctx.spawn(GameServer(QuoridorImpl), "gameServer")
+      val gameServer = ctx.spawn(GameServer(QuoridorImpl, userServer), "gameServer")
       val router = new Router(system, userServer, gameServer)
       val uri = Uri.from(scheme = "http", host = "localhost", port = 8888)
       Http().newServerAt(uri.authority.host.address, uri.authority.port).bind(router.route(uri)).foreach(ctx.self ! Bound(_))
@@ -62,10 +62,8 @@ object HttpServer {
 class HttpServer {
   import HttpServer.*
 
-  private given system: ActorSystem[HttpServer.Command] = ActorSystem(HttpServer.initial, "quoridor")
+  private given system: ActorSystem[Command] = ActorSystem(initial, "quoridor")
   private given ExecutionContext = system.executionContext
 
-  private val httpServer: ActorRef[HttpServer.Command] = system
-
-  httpServer ! HttpServer.Initialize(system)
+  system ! Initialize(system)
 }
