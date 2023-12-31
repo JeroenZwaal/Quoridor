@@ -2,20 +2,17 @@ package nl.zwaaltjes.quoridor.server
 
 import org.apache.pekko.actor.typed.scaladsl.AskPattern.*
 import org.apache.pekko.actor.typed.{ActorRef, ActorSystem}
-import org.apache.pekko.http.scaladsl.marshallers.sprayjson.SprayJsonSupport.*
-import org.apache.pekko.http.scaladsl.model.{StatusCodes, Uri}
 import org.apache.pekko.http.scaladsl.model.headers.*
+import org.apache.pekko.http.scaladsl.model.{StatusCodes, Uri}
 import org.apache.pekko.http.scaladsl.server.*
 import org.apache.pekko.http.scaladsl.server.AuthenticationFailedRejection.{CredentialsMissing, CredentialsRejected}
 import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.directives.Credentials
 import org.apache.pekko.util.Timeout
-import spray.json.DefaultJsonProtocol.*
 
 import scala.concurrent.duration.DurationInt
 
 // TODO: game protocol
-// TODO: content negotiation
 object Router {
   private val SessionCookie = "QuoridorSession"
   private val SessionHeader = "XQuoridorSession"
@@ -38,22 +35,22 @@ object Router {
     }
     .handle {
       case MalformedHeaderRejection(header, message, _) =>
-        complete(StatusCodes.BadRequest, s"The value of HTTP header '$header' was malformed:\n$message")
+        complete(StatusCodes.BadRequest, Json.Error(s"The value of HTTP header '$header' was malformed: $message"))
     }
     .handle {
       case RequestEntityExpectedRejection =>
-        complete(StatusCodes.BadRequest, "Request entity expected but not supplied.")
+        complete(StatusCodes.BadRequest, Json.Error("Request entity expected but not supplied."))
     }
     .handleAll[UnsupportedRequestContentTypeRejection] { rejections =>
-      val unsupported = rejections.find(_.contentType.isDefined).flatMap(_.contentType).fold("")(" [" + _ + "]")
-      val supported = rejections.flatMap(_.supported).mkString(" or ")
-      val expected = if (supported.isEmpty) "" else s" Expected:\n$supported"
-      complete(StatusCodes.UnsupportedMediaType, s"The request's Content-Type$unsupported is not supported.$expected")
+      val unsupported = rejections.find(_.contentType.isDefined).flatMap(_.contentType).getOrElse("")
+      val supported = rejections.flatMap(_.supported).mkString(", ")
+      val expected = if (supported.isEmpty) "" else s" Expected one of these types: $supported"
+      complete(StatusCodes.UnsupportedMediaType, Json.Error(s"The request's Content-Type $unsupported is not supported.$expected"))
     }
     .handleAll[UnacceptedResponseContentTypeRejection] { rejections =>
       val supported = rejections.flatMap(_.supported).map(_.format)
-      val message = supported.mkString("Resource representation is only available with these types:\n", "\n", "")
-      complete(StatusCodes.NotAcceptable, message)
+      val message = supported.mkString("Resource representation is only available with these types: ", ", ", "")
+      complete(StatusCodes.NotAcceptable, Json.Error(message))
     }
     .handle {
       case AuthenticationFailedRejection(cause, challenge) =>
@@ -67,13 +64,12 @@ object Router {
       case ValidationRejection(message, _) =>
         complete(StatusCodes.BadRequest, Json.Error(message))
     }
-    .handle { case rejection => sys.error(s"Unhandled rejection: $rejection") }
     .handleNotFound { complete(StatusCodes.NotFound, Json.Error("The requested resource could not be found.")) }
     .result()
 
   private val exceptionHandler: ExceptionHandler = ExceptionHandler {
     case e: Throwable =>
-      complete(StatusCodes.InternalServerError, Json.Error(s"Something went terribly wrong.\n\n$e"))
+      complete(StatusCodes.InternalServerError, Json.Error(s"Something went terribly wrong: $e"))
   }
 
   private def setSessionHeader(sessionId: SessionId): Directive0 =
