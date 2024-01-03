@@ -4,10 +4,12 @@ import nl.zwaaltjes.quoridor.impl.QuoridorImpl
 import nl.zwaaltjes.quoridor.server
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ActorRef, ActorSystem}
+import org.apache.pekko.http.cors.scaladsl.CorsDirectives.cors
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.Http.ServerBinding
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.http.scaladsl.server.*
+import org.apache.pekko.http.scaladsl.server.Directives.*
 
 import scala.concurrent.ExecutionContext
 
@@ -33,13 +35,26 @@ object HttpServer {
       val gameServer = ctx.spawn(GameServer(QuoridorImpl, userServer), "gameServer")
       val router = new Router(system, userServer, gameServer)
       val uri = Uri.from(scheme = "http", host = "localhost", port = 8888)
-      Http().newServerAt(uri.authority.host.address, uri.authority.port).bind(router.route(uri)).foreach(ctx.self ! Bound(_))
+      val route = cors() { // prevent mixed-content issues on api-docs
+        handleExceptions(Router.exceptionHandler) {
+          handleRejections(Router.rejectionHandler) {
+            ignoreTrailingSlash {
+              concat(
+                ApiDocsService.route(uri),
+                router.route(uri),
+              )
+            }
+          }
+        }
+      }
+      Http().newServerAt(uri.authority.host.address, uri.authority.port).bind(route).foreach(ctx.self ! Bound(_))
       binding
   }
 
-  private def binding: Behaviors.Receive[Command] = Behaviors.receivePartial { case (ctx, Bound(binding)) =>
-    ctx.log.info(s"Server is listening on http://${binding.localAddress.getHostString}:${binding.localAddress.getPort}/.")
-    bound(binding)
+  private def binding: Behaviors.Receive[Command] = Behaviors.receivePartial {
+    case (ctx, Bound(binding)) =>
+      ctx.log.info(s"Server is listening on http://${binding.localAddress.getHostString}:${binding.localAddress.getPort}/.")
+      bound(binding)
   }
 
   private def bound(binding: ServerBinding): Behaviors.Receive[Command] = Behaviors.receivePartial {
@@ -53,9 +68,10 @@ object HttpServer {
       unbinding
   }
 
-  private def unbinding: Behaviors.Receive[Command] = Behaviors.receivePartial { case (ctx, Unbound) =>
-    ctx.system.terminate()
-    Behaviors.stopped
+  private def unbinding: Behaviors.Receive[Command] = Behaviors.receivePartial {
+    case (ctx, Unbound) =>
+      ctx.system.terminate()
+      Behaviors.stopped
   }
 }
 

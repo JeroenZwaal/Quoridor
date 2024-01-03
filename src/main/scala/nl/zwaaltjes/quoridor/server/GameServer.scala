@@ -32,6 +32,7 @@ class GameServer private(quoridor: Quoridor, userServer: ActorRef[UserServer.Com
     case (ctx, NewGame(userId, opponents, replyTo)) =>
       val userIds = userId +: opponents
       ctx.log.info(s"Creating new game for players ${userIds.mkString(", ")}")
+      // TODO: verify player existence
       quoridor.createGame(userIds.map(_.str)) match {
         case Right(game) =>
           val gameId = GameId.create()
@@ -66,8 +67,8 @@ class GameServer private(quoridor: Quoridor, userServer: ActorRef[UserServer.Com
       }
       Future.sequence(futureData).foreach { data =>
         val gameData = data.map {
-          case (gameId, ok) =>
-            s"$gameId: ${ok.details.status}"
+          case (gameId, GameController.OK(status, _)) =>
+            s"$gameId: $status"
         }
         replyTo ! Dump(gameData.mkString("Games:\n- ", "\n- ", "\n"))
       }

@@ -4,6 +4,9 @@ import org.apache.pekko.actor.typed.ActorRef
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import spray.json.DefaultJsonProtocol.*
 
+// TODO: rename to Service
+// TODO: move route is possible
+// TODO: allow games to be delete
 object UserServer {
   sealed trait Command
   final case class Authenticate(userId: UserId, password: Password, replyTo: ActorRef[OK | Error]) extends Command

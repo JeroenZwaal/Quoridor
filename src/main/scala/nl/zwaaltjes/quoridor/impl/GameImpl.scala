@@ -8,7 +8,7 @@ private class GameImpl(override val size: Int, override val players: IndexedSeq[
   // board indices start at 1
   private val horizontalWalls = Array.fill(size + 1, size + 1)(false)
   private val verticalWalls = Array.fill(size + 1, size + 1)(false)
-  private var moves = IndexedSeq.empty[Move]
+  private var moves = IndexedSeq.empty[(Player, Move)]
   private var playerIndex = 0
   private var finished = false
 
@@ -26,7 +26,7 @@ private class GameImpl(override val size: Int, override val players: IndexedSeq[
   override def winner: Option[Player] =
     Option.when(finished)(currentPlayer)
 
-  override def history: IndexedSeq[Move] =
+  override def history: IndexedSeq[(Player, Move)] =
     moves
 
   override def play(move: Move): Either[String, Boolean] =
@@ -39,9 +39,9 @@ private class GameImpl(override val size: Int, override val players: IndexedSeq[
         case VerticalWall(position) => verticalWall(position)
       }
       finished = result.getOrElse(false)
+      moves :+= currentPlayer -> move
       if (!finished)
         playerIndex = (playerIndex + 1) % players.size
-      moves :+= move
       result
     }
 

@@ -1,0 +1,675 @@
+openapi: 3.0.0
+info:
+  title: Quoridor
+  description: Multi-player Quoridor game engine
+  version: v0
+servers:
+  - url: http://localhost:8888
+
+paths:
+  /version:
+    get:
+      summary: Get version
+      description: Returns the application version.
+      operationId: version
+      responses:
+        '200':
+          description: Version
+          content:
+            application/vnd.zwaaltjes.quoridor.version.v0+json:
+              schema:
+                $ref: '#/components/schemas/Version'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Version'
+  /shutdown:
+    post:
+      summary: Shut down
+      description: Shuts down the server.
+      operationId: shutdown
+      security:
+        - admin: [ ]
+      responses:
+        '202':
+          description: The server is going down
+        '401':
+          $ref: '#/responses/Unauthorized'
+  /users/{userId}:
+    get:
+      summary: Get user
+      description: Returns user data, such as email and name.
+      operationId: user-get
+      parameters:
+        - in: path
+          name: userId
+          description: The ID of the user
+          schema:
+            $ref: '#/components/schemas/UserId'
+          required: true
+      security:
+        - sessionHeader: [ ]
+        - sessionCookie: [ ]
+      responses:
+        '200':
+          description: User details
+          content:
+            application/vnd.zwaaltjes.quoridor.userdata.v0+json:
+              schema:
+                $ref: '#/components/schemas/UserData'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserData'
+        '404':
+          $ref: '#/responses/NonExistingUser'
+        '401':
+          $ref: '#/responses/NoSession'
+    put:
+      summary: Create or update user
+      description: Creates a new user or updates an existing user.
+      operationId: user-set
+      parameters:
+        - in: path
+          name: userId
+          description: The ID of the user
+          schema:
+            $ref: '#/components/schemas/UserId'
+          required: true
+      security:
+        - sessionHeader: [ ]
+        - sessionCookie: [ ]
+      requestBody:
+        required: true
+        content:
+          application/vnd.zwaaltjes.quoridor.user-details.v0+json:
+            schema:
+              $ref: '#/components/schemas/UserDetails'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDetails'
+      responses:
+        '200':
+          description: An existing used was updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OK'
+        '201':
+          description: A new user was created.
+          headers:
+            Location:
+              description: The URI of the new user.
+            Set-Cookie:
+              description: The session cookie of the new user.
+            XQuoridorSession:
+              description: The session ID for the new user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OK'
+        '400':
+          description: The user already exists and no session was provided.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: The user already exists.
+                required:
+                  - success
+                  - error
+        '403':
+          description: The authenticated user/session does not match the supplied user ID.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Cannot changed user for hzwaal.
+                required:
+                  - success
+                  - error
+        '404':
+          $ref: '#/responses/NonExistingUser'
+        '401':
+          $ref: '#/responses/NoSession'
+  /games:
+    get:
+      summary: List all games
+      description: Returns all games for the authenticated user/session.
+      operationId: game-list
+      security:
+        - sessionHeader: [ ]
+        - sessionCookie: [ ]
+      responses:
+        '200':
+          description: The IDs om all games.
+          content:
+            application/vnd.zwaaltjes.quoridor.game-list.v0+json:
+              schema:
+                $ref: '#/components/schemas/GameList'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameList'
+        '401':
+          $ref: '#/responses/NoSession'
+  /games/invite?opponent={opponent}[&opponent={opponent}]:
+    post:
+      summary: Start new game
+      description: Invites the supplied user to a new game with the authenticated user/session.
+      operationId: game-invite
+      security:
+        - sessionHeader: [ ]
+        - sessionCookie: [ ]
+      parameters:
+        - in: query
+          name: opponent
+          description: The ID(s) of the user(s) to invite. For a multi-player game use repeated opponent parameters.
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/UserId'
+          required: true
+          collectionFormat: multi
+          value:
+            - hzwaal
+      produces:
+        - application/json
+      responses:
+        '201':
+          description: An existing used was updated.
+          headers:
+            Location:
+              description: The URI of the new user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OK'
+        '400':
+          description: |
+            The game could not be created, because:
+            - One or more of the supplied user IDs does not exist.
+            - An invalid number of players was supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/responses/NoSession'
+  /games/{gameId}:
+    get:
+      summary: Get game details
+      description: Returns all the details for the supplied game ID.
+      operationId: game-get
+      security:
+        - sessionHeader: [ ]
+        - sessionCookie: [ ]
+      parameters:
+        - in: path
+          name: gameId
+          description: The ID of the game.
+          schema:
+            $ref: '#/components/schemas/GameId'
+          required: true
+      responses:
+        '200':
+          $ref: '#/responses/Game'
+        '404':
+          $ref: '#/responses/NonExistingGame'
+        '401':
+          $ref: '#/responses/NoSession'
+  /games/{gameId}/accept:
+    post:
+      summary: Accept new game
+      description: Accepts the invitation to play a new game; when all invited users have accepted, the game will start.
+      operationId: game-accept
+      security:
+        - sessionHeader: [ ]
+        - sessionCookie: [ ]
+      parameters:
+        - in: path
+          name: gameId
+          description: The ID of the game to accept.
+          schema:
+            $ref: '#/components/schemas/GameId'
+          required: true
+      responses:
+        '200':
+          $ref: '#/responses/Game'
+        '404':
+          $ref: '#/responses/NonExistingGame'
+        '401':
+          $ref: '#/responses/NoSession'
+  /games/{gameId}/reject:
+    post:
+      summary: Reject new game
+      description: Rejects the invitation to play a new game; the game will be aborted.
+      operationId: game-reject
+      security:
+        - sessionHeader: [ ]
+        - sessionCookie: [ ]
+      parameters:
+        - in: path
+          name: gameId
+          description: The ID of the game to reject.
+          schema:
+            $ref: '#/components/schemas/GameId'
+          required: true
+      responses:
+        '200':
+          $ref: '#/responses/Game'
+        '404':
+          $ref: '#/responses/NonExistingGame'
+        '401':
+          $ref: '#/responses/NoSession'
+  /games/{gameId}/play:
+    post:
+      summary: Play a move
+      description: Performs the supplied move for the authenticated user/session.
+      operationId: game-play
+      security:
+        - sessionHeader: [ ]
+        - sessionCookie: [ ]
+      parameters:
+        - in: path
+          name: gameId
+          description: The ID of the game.
+          schema:
+            $ref: '#/components/schemas/GameId'
+          required: true
+      requestBody:
+        description: The move to play or the wall to place.
+        required: true
+        content:
+          application/vnd.zwaaltjes.quoridor.move.v0+json:
+            schema:
+              $ref: '#/components/schemas/Move'
+            examples:
+              Move player:
+                value:
+                  movePlayer: C4
+              Place horizontal wall:
+                value:
+                  horizontalWall: A3
+              Place vertical wall:
+                value:
+                  verticalWall: B5
+      responses:
+        '200':
+          $ref: '#/responses/Game'
+        '400':
+          description: The move was not valid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Cannot place wall at that position.
+        '404':
+          $ref: '#/responses/NonExistingGame'
+        '401':
+          $ref: '#/responses/NoSession'
+
+components:
+  securitySchemes:
+    admin:
+      description: The credentials of the administrator.
+      type: basic
+    sessionCookie:
+      description: The session cookie; use either this cookie or the XQuoridorSession header; the value is the same.
+      type: apiKey
+      in: cookie
+      name: QuoridorSession
+    sessionHeader:
+      description: The session header; use either this header or the QuoridorSession cookie; the value is the same.
+      type: apiKey
+      in: header
+      name: XQuoridorSession
+  schemas:
+    Envelope:
+      description: |
+        The generic schema for any response, which can either be a success or a failure.
+        The data field will only be present in case of success; it is optional, though.
+        The message field will always and only be present in case of failure.
+      type: object
+      properties:
+        success:
+          description: Indicates whether the response is a success or a failure.
+          type: boolean
+        data:
+          description: The response value in case of success (if any).
+          type: any
+        message:
+          description: The error message in case of failure.
+          type: String
+      required:
+        - success
+    OK:
+      description: The request was handled successfully.
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+      required:
+        - success
+    Error:
+      description: The request was not handled successfully.
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          description: The description of the error and/or its cause.
+          type: string
+          example: The supplied user ID does not exist.
+
+    Game:
+      description: The details of a game, such as players, status, history and available moves.
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            size:
+              description: The size of the board (in one dimension).
+              type: integer
+              example: 9
+            players:
+              description: The user IDs of the players in the game.
+              type: array
+              items:
+                type: object
+                properties:
+                  userId:
+                    $ref: '#/components/schemas/UserId'
+                  position:
+                    description: The current position of the player.
+                    type: string
+                    example: A5
+                  wallsLeft:
+                    description: The number of walls that the player can still place.
+                    type: integer
+                    example: 10
+                required:
+                  - userId
+                  - wallsLeft
+            status:
+              description: |
+                The status of the game:
+                - Invited: opponents have been invited, but at least of them has not yet accepted (or rejected).
+                - Started: the game is in progress; no winner yet.
+                - Finished: the game is finished.
+                - Aborted: the game has been aborted, because one of the opponents rejected.
+              type: string
+              example: Started
+            currentPlayer:
+              $ref: '#/components/schemas/UserId'
+            winPositions:
+              description: The positions at which the current player can win.
+              type: array
+              items:
+                $ref: '#/components/schemas/Position'
+            winner:
+              $ref: '#/components/schemas/UserId'
+            history:
+              description: The moves that have been played in the game, oldest first.
+              type: array
+              items:
+                type: object
+                properties:
+                  userId:
+                    $ref: '#/component/schemas/UserId'
+                  move:
+                    $ref: '#/components/schemas/Move'
+                required:
+                  - userId
+                  - move
+            moves:
+              description: All possible moves for the current player, including all possible walls.
+              type: array
+              items:
+                type: object
+                properties:
+                  userId:
+                    $ref: '#/components/schemas/UserId'
+                  move:
+                    $ref: '#/components/schemas/Move'
+                required:
+                  - userId
+                  - move
+          required:
+            - size
+            - players
+            - status
+            - currentPlayer
+            - reachablePositions
+            - history
+            - moves
+      required:
+        - success
+        - data
+    GameId:
+      description: The ID of the game.
+      type: string
+      format: uuid
+      example: 11223344-aabb-ccdd-eeff-556677889900
+    GameList:
+      description: The list of game IDs.
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            games:
+              type: array
+              items:
+                - $ref: '#/components/schemas/GameId'
+          required:
+            - games
+      required:
+        - success
+        - data
+    Move:
+      description: A Quoridor move, which can either be a player move or a wall placement. Use only a single field.
+      type: object
+      properties:
+        movePlayer:
+          description: The coordinates of the position to move to.
+          type: string
+          example: A4
+        horizontalWall:
+          description: The coordinates of the bottom-left position the horizontal wall touches.
+          type: string
+          example: A4
+        verticalWall:
+          description: The coordinates of the bottom-left position the vertical wall touches.
+          type: string
+          example: A4
+    Position:
+      description: The coordinates of a field on the board.
+      type: string
+      example: A4
+    UserData:
+      description: The details of a user, such as name and email. Rows are letters, columns are numbers. The bottom-left corner is A1.
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            userId:
+              $ref: '#/components/schemas/UserId'
+            name:
+              $ref: '#/components/schemas/UserName'
+            email:
+              $ref: '#/components/schemas/UserEmail'
+          required:
+            - userId
+            - name
+            - email
+      required:
+        - success
+        - data
+    UserDetails:
+      description: The details of a user, such as name, email and password.
+      type: object
+      properties:
+        name:
+          $ref: '#/components/schemas/UserName'
+        email:
+          $ref: '#/components/schemas/UserEmail'
+        password:
+          description: The password of the user.
+          type: string
+          example: 6eH3!m
+      required:
+        - userId
+        - name
+        - email
+    Version:
+      description: The version of the application.
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: string
+          format: '{major}.{minor}.{patch}[-SNAPSHOT]'
+          example: 0.0.1
+      required:
+        - success
+        - data
+    UserEmail:
+      description: The email address of the user.
+      type: string
+      example: hugo.zwaal@gmail.com
+    UserId:
+      description: The ID of a user.
+      type: string
+      example: hzwaal
+    UserName:
+      description: The full name of the user.
+      type: string
+      example: Hugo Zwaal
+
+responses:
+  OK:
+    description: The request was handled successfully.
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/OK'
+  Game:
+    description: The details for the game.
+    content:
+      application/vnd.zwaaltjes.quoridor.game.v0+json:
+        schema:
+          $ref: '#/components/schemas/Game'
+        example:
+          size: 9
+          players:
+            - userId: hzwaal
+              position: A4
+              walls: 10
+            - userId: waterjeloen
+              position: I5
+              walls: 9
+          status: Started
+          currentPlayer: hzwaal
+          winPositions:
+            - I1
+            - I2
+            - I3
+            - I4
+            - I5
+            - I6
+            - I7
+            - I8
+            - I9
+          history:
+            - userId: hzwaal
+              movePlayer: A4
+            - userId: waterjeloen
+              horizontalWall: C5
+          moves:
+            - movePlayer: A3
+            - movePlayer: A5
+            - movePlayer: B4
+  NonExistingGame:
+    description: The supplied game ID does not exist.
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+            message:
+              type: string
+              example: The game does not exist.
+          required:
+            - success
+            - error
+  NonExistingUser:
+    description: The supplied user ID does not exist.
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+            message:
+              type: string
+              example: The user does not exist.
+          required:
+            - success
+            - error
+  NoSession:
+    description: No valid session was found.
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+            message:
+              type: string
+              example: The supplied authentication is invalid.
+          required:
+            - success
+            - error
+  Unauthorized:
+    description: No basic auth credentials are provided or they are missing.
+    headers:
+      WWW-Authenticiate:
+        type: string

@@ -126,8 +126,8 @@ class GamePanel(game: Game) extends JComponent {
     // draw walls and players
     g.setColor(Color.orange.darker)
     game.history.foreach {
-      case HorizontalWall(Position(r, c)) => g.fillRect(xOf(c), yOf(r) - cell.height, cell.width * (2 * side - 1), cell.height)
-      case VerticalWall(Position(r, c)) => g.fillRect(xOf(c + 1) - cell.width, yOf(r + 1), cell.width, cell.height * (2 * side - 1))
+      case (_, HorizontalWall(Position(r, c))) => g.fillRect(xOf(c), yOf(r) - cell.height, cell.width * (2 * side - 1), cell.height)
+      case (_, VerticalWall(Position(r, c))) => g.fillRect(xOf(c + 1) - cell.width, yOf(r + 1), cell.width, cell.height * (2 * side - 1))
       case _ =>
     }
 

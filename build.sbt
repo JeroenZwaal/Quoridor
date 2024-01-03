@@ -16,8 +16,10 @@ val dependencies = Seq(
   "org.apache.pekko" %% "pekko-actor-typed" % "1.0.1",
   "org.apache.pekko" %% "pekko-stream" % "1.0.1",
   "org.apache.pekko" %% "pekko-http" % "1.0.0",
+  "org.apache.pekko" %% "pekko-http-cors" % "1.0.0",
   "org.apache.pekko" %% "pekko-http-spray-json" % "1.0.0",
-  // "com.github.pjfanning" %% "pekko-http-session-core" % "0.8.0",
+  "org.apache.pekko" %% "pekko-slf4j" % "1.0.0",
+
   "ch.qos.logback" % "logback-classic" % "1.2.12",
 
   "org.scalatest" %% "scalatest" % "3.2.15" % "test",
